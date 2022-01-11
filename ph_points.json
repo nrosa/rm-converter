@@ -1,5 +1,4 @@
-{
-"PH_POINT": [
+[
 	{
 		"PK_PH_POINT_ID" : 1533,
 		"FK_PH_CURVE_ID" : 114,
@@ -7194,4 +7193,4 @@
 		"HIGH_PH_FRACTION_X" : 100,
 		"RESULT_PH_Y" : 8.1
 	}
-]}
+]
