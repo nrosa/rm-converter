@@ -1,5 +1,4 @@
-{
-"CHEMICALS": [
+[
 	{
 		"CHEMICAL_ID" : 1,
 		"NAME" : "1,2-propanediol",
@@ -177242,4 +177241,4 @@
 		"STRUCTSTRING" : null,
 		"STRUCTSTRINGTYPE" : "SMILES"
 	}
-]}
+]

@@ -1,5 +1,4 @@
-{
-"CHEMICAL_ALIAS": [
+[
 	{
 		"CHEMICAL_ID" : 1,
 		"CHEM_ALIAS" : "propylene glycol"
@@ -13232,4 +13231,4 @@
 		"CHEMICAL_ID" : 33074,
 		"CHEM_ALIAS" : "PEG Smear 6-10kD"
 	}
-]}
+]

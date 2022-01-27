@@ -1,5 +1,4 @@
-{
-"STOCKS": [
+[
 	{
 		"STOCK_ID" : 64,
 		"STOCK_NAME" : "manganese (II) chloride (0.1M)",
@@ -10584,4 +10583,4 @@
 		"HAZARD_LABEL_2" : null,
 		"STOCK_DENSITY" : 1.13
 	}
-]}
+]
