@@ -60,9 +60,6 @@ for well_id in design.wells:
         if high_stock_id is not None:
             used_chem_stocks[di.chemical.id].add(high_stock_id)
 
-
-
-
     screen.add_condition(condition)
 
     break

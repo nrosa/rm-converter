@@ -129,13 +129,14 @@ class ConditionIngredientXml(BaseXmlObject):
         high_local_id: Optional[int]
     ):
         super().__init__(name='conditionIngredient')
-        self.add_child(TypeXml(item_class))
         self.add_child(ConcentrationXml(concentration))
         if ph is not None:
             self.add_child(PhXml(ph))
+        self.add_child(TypeXml(item_class))
         self.add_child(LocalIdXml(local_id))
         if high_local_id is not None:
             self.add_child(high_local_id)
+
 
 class TypeXml(BaseXmlObject):
     def __init__(self, condition_type: str):
@@ -143,7 +144,7 @@ class TypeXml(BaseXmlObject):
 
 class TypesXml(BaseXmlObject):
     def __init__(self, types: List[str]):
-        super().__init__(name='type')
+        super().__init__(name='types')
         for condition_type in types:
             self.add_child(TypeXml(condition_type))
 
@@ -178,13 +179,13 @@ class IngredientXml(BaseXmlObject):
         stocks : StocksXml,
     ):
         super().__init__(name='ingredient')
-        self.add_child(NameXml(name))
-        self.add_child(CasNumbersXml(cas_number))
+        self.add_child(stocks)
         self.add_child(AliasesXml(aliases))
         self.add_child(TypesXml(types))
         if buffer_data is not None:
             self.add_child(buffer_data)
-        self.add_child(stocks)
+        self.add_child(CasNumbersXml(cas_number))
+        self.add_child(NameXml(name))
 
 class NameXml(BaseXmlObject):
     def __init__(self, name: str):
@@ -254,16 +255,16 @@ class StockXml(BaseXmlObject):
         ph: Optional[float],
     ):
         super().__init__(name='stock')
-        self.add_child(LocalIdXml(local_id))
+        self.add_child(StockLocalIdXml(local_id))
         self.add_child(StockConcentrationXml(concentration))
-        self.add_child(UnitsXml(units))
-        self.add_child(UseAsBufferXml('true' if use_as_buffer else 'false'))
+        self.add_child(UnitsXml(units))    
         if ph is not None:
             self.add_child(PhXml(ph))
+        self.add_child(UseAsBufferXml(use_as_buffer))
 
-class LocalIdXml(BaseXmlObject):
+class StockLocalIdXml(BaseXmlObject):
     def __init__(self, local_id: int):
-        super().__init__(name='LocalID', text=str(local_id))
+        super().__init__(name='localID', text=str(local_id))
 
 class StockConcentrationXml(BaseXmlObject):
     def __init__(self, concentration: float):
