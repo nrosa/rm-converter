@@ -1,5 +1,8 @@
 import json
+import warnings
 import xml.etree.ElementTree as et
+
+from typing import Optional
 
 from src import objects, constants, utils
 
@@ -28,8 +31,10 @@ class ChemicalsFactory(object):
                 cas = chem['CAS'],
                 pka = chem['PKA1'] if chem['PKA1'] != '' else None,
                 aliases = aliases,
-                groups = groups
+                groups = groups,
+                pka_warn = chem['PKA2'] is not None or chem['PKA3'] is not None
             ))
+                
 
         # Pre index the chemical id's
         self.chem_id_idxs = dict()
@@ -57,6 +62,7 @@ class StocksFactory(object):
                 conc = x['STOCK_CONC'],
                 units = x['STOCK_UNITS'],
                 ph = x['STOCK_PH'],
+                name = x['STOCK_NAME'],
             ) for x in stock_data
         ]
 
@@ -66,12 +72,25 @@ class StocksFactory(object):
             self.stock_id_idxs[stock.id] = i
 
     def get_stock_by_id(self, stock_id: int):
+        assert isinstance(stock_id, int)
         return self.stocks[self.stock_id_idxs[stock_id]]
+
+    def get_stock_by_chem_conc_ph(self, chem_id: int, conc: float, ph: float) -> Optional[objects.Stock]:
+        for stock in self.stocks:
+            if stock.chem_id == chem_id and stock.conc == conc and stock.ph == ph:
+                return stock
+        return None
+
+    def get_stock_by_name(self, name: str) -> Optional[objects.Stock]:
+        for stock in self.stocks:
+            if stock.name == name:
+                return stock
+        return None
 
 
 
 class PhCurveFactory(object):
-    def __init__(self, curve_json_path, point_json_path):
+    def __init__(self, curve_json_path: str, point_json_path: str, stocks_factory: StocksFactory):
         with open(curve_json_path) as fp:
             curve_data = json.load(fp)
         with open(point_json_path) as fp:

@@ -14,6 +14,7 @@ class Chemical(object):
         pka: Optional[float],
         aliases: List[str],
         groups: List[str],
+        pka_warn: bool,
     ):
         self.id = chem_id
         self.name = name 
@@ -21,6 +22,19 @@ class Chemical(object):
         self.pka = pka
         self.aliases = aliases
         self.groups = groups
+
+        self.pka_warn = False
+
+        shortname = ''
+        if len(self.aliases) > 0:
+            shortname = sorted(aliases, key=lambda x: len(x))[0]
+            if len(shortname) > 8:
+                shortname = shortname[:8]
+        else:
+            shortname = name[:8] if len(name) > 8 else name
+
+        self.shortname = shortname
+
 
 class PhPoint(object):
     def __init__(self, base_fraction: float, ph: float):
@@ -95,6 +109,7 @@ class BaseXmlObject(object):
         self.children = []
 
     def add_child(self, child: BaseXmlObject):
+        assert isinstance(child, BaseXmlObject)
         self.children.append(child)
 
     def get_xml_element(self) -> et.Element:
@@ -135,7 +150,7 @@ class ConditionIngredientXml(BaseXmlObject):
         self.add_child(TypeXml(item_class))
         self.add_child(LocalIdXml(local_id))
         if high_local_id is not None:
-            self.add_child(high_local_id)
+            self.add_child(HighPhLocalIdXml(high_local_id))
 
 
 class TypeXml(BaseXmlObject):
@@ -173,6 +188,7 @@ class IngredientXml(BaseXmlObject):
         self,
         name: str,
         cas_number: str,
+        shortname: str,
         aliases : List[str],
         types: List[str],
         buffer_data: Optional[BufferDataXml],
@@ -186,6 +202,11 @@ class IngredientXml(BaseXmlObject):
             self.add_child(buffer_data)
         self.add_child(CasNumbersXml(cas_number))
         self.add_child(NameXml(name))
+        self.add_child(ShortNameXml(shortname))
+
+class ShortNameXml(BaseXmlObject):
+    def __init__(self, shortname: str):
+        super().__init__(name='shortName', text=shortname)    
 
 class NameXml(BaseXmlObject):
     def __init__(self, name: str):
@@ -261,6 +282,10 @@ class StockXml(BaseXmlObject):
         if ph is not None:
             self.add_child(PhXml(ph))
         self.add_child(UseAsBufferXml(use_as_buffer))
+        self.add_child(LowConcentrationXml(0))
+        self.add_child(HighConcentrationXml(concentration))
+        self.add_child(VendorXml())
+        self.add_child(VendorPartNumberXml(local_id))
 
 class StockLocalIdXml(BaseXmlObject):
     def __init__(self, local_id: int):
@@ -270,9 +295,26 @@ class StockConcentrationXml(BaseXmlObject):
     def __init__(self, concentration: float):
         super().__init__(name='stockConcentration', text=str(concentration))
 
+class LowConcentrationXml(BaseXmlObject):
+    def __init__(self, concentration: float):
+        super().__init__(name='defaultLowConcentration', text=str(concentration))
+
+class HighConcentrationXml(BaseXmlObject):
+    def __init__(self, concentration: float):
+        super().__init__(name='defaultHighConcentration', text=str(concentration))
+
 class UnitsXml(BaseXmlObject):
     def __init__(self, units: str):
         super().__init__(name='units', text=units)
+
+class VendorXml(BaseXmlObject):
+    def __init__(self):
+        super().__init__(name='vendorName', text='C3')
+
+class VendorPartNumberXml(BaseXmlObject):
+    def __init__(self, stock_id: int):
+        super().__init__(name='vendorPartNumber', text=f'C3-{stock_id}')
+
 
 class UseAsBufferXml(BaseXmlObject):
     def __init__(self, buffer: bool):

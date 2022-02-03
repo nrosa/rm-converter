@@ -1,12 +1,15 @@
 import src
 
 from collections import defaultdict
+import warnings
+
 import xml.etree.ElementTree as et
+from xml.dom import minidom
 
 # Load all the object factories
 chems_f = src.factories.ChemicalsFactory('chemicals.json','chemical_alias.json', 'chem_group_members.json')
 stocks_f = src.factories.StocksFactory('stocks.json')
-phcurve_f = src.factories.PhCurveFactory('ph_curves.json', 'ph_points.json')
+phcurve_f = src.factories.PhCurveFactory('ph_curves.json', 'ph_points.json', stocks_f)
 design_f = src.factories.DesignFactory(chems_f)
 recipe_f = src.factories.RecipeFactory(stocks_f)
 
@@ -21,14 +24,17 @@ screen = src.objects.ScreenXml()
 used_chem_stocks = defaultdict(set)
 
 for well_id in design.wells:
+    if well_id != 77:
+        continue
     dw = design.wells[well_id]
 
     condition = src.objects.ConditionXml()
 
     for di in dw.items:
         # Find the stock(s) that will be used for this design item
-        low_chem_id = None
-        high_chem_id = None
+        low_chem = (None, None)
+        high_chem = (None, None)
+        # TODO
         if phcurve_f.is_chem_curve(di.chemical.id):
             curve = phcurve_f.get_curve_by_chem_id(di.chemical.id)
             low_chem_id = curve.low_chem_id
@@ -62,7 +68,6 @@ for well_id in design.wells:
 
     screen.add_condition(condition)
 
-    break
 
 for chem_id in used_chem_stocks:
     chemical = chems_f.get_chem_by_id(chem_id)
@@ -75,6 +80,8 @@ for chem_id in used_chem_stocks:
         buffer_data = src.objects.BufferDataXml(titration_points=points)
     else:
         if chemical.pka is not None:
+            if chemical.pka_warn:
+                warnings.warn(f'Warning: Chemical {chemical.name} has multiple pKas, using {chemical.pka}')
             buffer_data = src.objects.BufferDataXml(pka = chemical.pka)
 
     stocks = src.objects.StocksXml()
@@ -92,12 +99,15 @@ for chem_id in used_chem_stocks:
 
 
     # Create the stocks
+    if chemical.cas is None:
+        warnings.warn(f'Warning: Chemical {chemical.name} has no CAS, this will need to be resolved when importing into RockMaker')
 
     screen.add_ingredient(
         src.objects.IngredientXml(
             name = chemical.name,
+            shortname = chemical.shortname,
             aliases = chemical.aliases,
-            cas_number = chemical.cas,
+            cas_number = chemical.cas if chemical.cas is not None else '-1',
             types = chemical.groups,
             buffer_data = buffer_data,
             stocks = stocks,
@@ -106,5 +116,8 @@ for chem_id in used_chem_stocks:
 
 
 
-tree = et.ElementTree(screen.get_xml_element())
-tree.write('test.xml')
+# tree = et.ElementTree()
+
+xmlstr = minidom.parseString(et.tostring(screen.get_xml_element())).toprettyxml(indent="   ")
+with open('test.xml', "w") as f:
+    f.write(xmlstr)
