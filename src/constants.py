@@ -1,4 +1,4 @@
-chem_groups = {
+CHEM_GROUPS = {
     1:'Protein',
     2:'Salt',
     3:'Polymer',
@@ -14,3 +14,7 @@ chem_groups = {
     13:'Fundamental Mixtures',
 }
 
+WATER_BARCODE = '267'
+BUFFER = 'Buffer'
+
+SHRTNAME_LEN = 6

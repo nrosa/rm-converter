@@ -2,6 +2,9 @@ from __future__ import annotations
 from typing import Optional, List
 import xml.etree.ElementTree as et
 
+from src import constants
+from src.constants import SHRTNAME_LEN
+
 ####################################################################################################
 # C3 Objects
 ####################################################################################################
@@ -28,10 +31,10 @@ class Chemical(object):
         shortname = ''
         if len(self.aliases) > 0:
             shortname = sorted(aliases, key=lambda x: len(x))[0]
-            if len(shortname) > 8:
-                shortname = shortname[:8]
+            if len(shortname) > SHRTNAME_LEN:
+                shortname = shortname[:SHRTNAME_LEN]
         else:
-            shortname = name[:8] if len(name) > 8 else name
+            shortname = name[:SHRTNAME_LEN] if len(name) > SHRTNAME_LEN else name
 
         self.shortname = shortname
 
@@ -42,7 +45,13 @@ class PhPoint(object):
         self.ph = ph
 
 class PhCurve(object):
-    def __init__(self, chem_id: int, low_chem_id:int, high_chem_id:int, points: List[PhPoint]):
+    def __init__(
+        self,
+        chem_id: int,
+        low_chem_id: int,
+        high_chem_id: int,
+        points: List[PhPoint]
+    ):
         self.chem_id = chem_id
         self.low_chem_id = low_chem_id
         self.high_chem_id = high_chem_id
@@ -94,6 +103,28 @@ class RecipeStock(object):
 class Recipe(object):
     def __init__(self, stocks: List[RecipeStock]):
         self.stocks = stocks
+
+    def get_stocks_for_well(self, well_id: int):
+        return [x for x in self.stocks if well_id in x.wells]
+
+# Class for keeping track of the info for a Forumlatrix ingredient
+class Ingredient(object):
+    def __init__(self, chemical: Chemical):
+        self.chemical = chemical
+
+        self.types = set()
+        # List[Tuple[stock: Stock, use_as_buffer: bool]]
+        self.stocks = list()
+
+    def add_type(self, ingredient_type: str): 
+        self.types.add(ingredient_type)
+
+    def add_stock(self, stock_id: int, use_as_buffer: bool):
+        self.stocks.append((stock_id, use_as_buffer))
+
+    def is_buffer(self):
+        return constants.BUFFER in self.types
+
 
 
 
@@ -206,11 +237,11 @@ class IngredientXml(BaseXmlObject):
 
 class ShortNameXml(BaseXmlObject):
     def __init__(self, shortname: str):
-        super().__init__(name='shortName', text=shortname)    
+        super().__init__(name='shortName', text='C3'+shortname)    
 
 class NameXml(BaseXmlObject):
     def __init__(self, name: str):
-        super().__init__(name='name', text=name)
+        super().__init__(name='name', text='C3'+name)
 
 class AliasesXml(BaseXmlObject):
     def __init__(self, aliases: List[str]):
@@ -285,7 +316,7 @@ class StockXml(BaseXmlObject):
         self.add_child(LowConcentrationXml(0))
         self.add_child(HighConcentrationXml(concentration))
         self.add_child(VendorXml())
-        self.add_child(VendorPartNumberXml(local_id))
+        self.add_child(VendorPartNumberXml(local_id, use_as_buffer))
 
 class StockLocalIdXml(BaseXmlObject):
     def __init__(self, local_id: int):
@@ -309,11 +340,13 @@ class UnitsXml(BaseXmlObject):
 
 class VendorXml(BaseXmlObject):
     def __init__(self):
-        super().__init__(name='vendorName', text='C3')
+        super().__init__(name='vendorName', text='CSIRO')
 
 class VendorPartNumberXml(BaseXmlObject):
-    def __init__(self, stock_id: int):
-        super().__init__(name='vendorPartNumber', text=f'C3-{stock_id}')
+    def __init__(self, stock_id: int, use_as_buffer: bool):
+        assert isinstance(use_as_buffer, bool)
+        part_str = f'CSIRO-{stock_id}-b' if use_as_buffer else f'CSIRO-{stock_id}'
+        super().__init__(name='vendorPartNumber', text=part_str)
 
 
 class UseAsBufferXml(BaseXmlObject):

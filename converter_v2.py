@@ -6,6 +6,7 @@ import warnings
 import xml.etree.ElementTree as et
 from xml.dom import minidom
 
+
 # Load all the object factories
 chems_f = src.factories.ChemicalsFactory('chemicals.json','chemical_alias.json', 'chem_group_members.json')
 stocks_f = src.factories.StocksFactory('stocks.json')
@@ -21,36 +22,74 @@ recipe = recipe_f.get_recipe_from_xml(recipe_xml_path = 'Shotgun_recipe.xml')
 screen = src.objects.ScreenXml()
 
 # Keep track of which chemicals and stocks have been used so far, so I only add the required ones to the ingredients
-used_chem_stocks = defaultdict(set)
+# Key is chem_id
+ingredient_dict = dict() # dict[objects.Ingredient]
 
 for well_id in design.wells:
-    if well_id != 77:
+    if well_id != 92: #and well_id != 77:#77:
         continue
     dw = design.wells[well_id]
 
     condition = src.objects.ConditionXml()
 
     for di in dw.items:
-        # Find the stock(s) that will be used for this design item
-        low_chem = (None, None)
-        high_chem = (None, None)
-        # TODO
-        if phcurve_f.is_chem_curve(di.chemical.id):
-            curve = phcurve_f.get_curve_by_chem_id(di.chemical.id)
-            low_chem_id = curve.low_chem_id
-            high_chem_id = curve.high_chem_id
-        else:
-            low_chem_id = di.chemical.id
+        # Create ingredient object
+        if di.chemical.id not in ingredient_dict:
+            ingredient_dict[di.chemical.id] = src.objects.Ingredient(di.chemical)
+        ingredient = ingredient_dict[di.chemical.id]
 
-        # Find the stocks for the chemicals in this well
-        # High stock condition will not be hit if there is no high stock for this chemical so 
-        # must initialise it
+        # Add the type context for this Ingredient
+        ingredient.add_type(di.item_class)
+
+
+        # Initialise the stock ids for this condition ingredient
+        low_stock_id = None
         high_stock_id = None
-        for recipe_stock in recipe.stocks:
-            if recipe_stock.stock.chem_id == low_chem_id and well_id in recipe_stock.wells:
-                low_stock_id = recipe_stock.stock.id
-            if recipe_stock.stock.chem_id == high_chem_id and well_id in recipe_stock.wells:
-                high_stock_id = recipe_stock.stock.id
+
+        well_recipe_stocks = recipe.get_stocks_for_well(well_id)
+
+        if di.item_class == src.constants.BUFFER:
+            di_chem_ids = list()
+            if phcurve_f.is_chem_curve(di.chemical.id):
+                curve = phcurve_f.get_curve_by_chem_id(di.chemical.id)
+                if curve.low_chem_id == curve.high_chem_id:
+                    di_chem_ids = (curve.low_chem_id,)
+                else:
+                    di_chem_ids = (curve.low_chem_id, curve.high_chem_id)
+            else:
+                di_chem_ids = (di.chemical.id,)
+
+            # Find the stocks for these chemicals from the recipe
+            di_stock_ids = list()
+            
+            for chem_id in di_chem_ids:
+                di_stock_ids += [x.stock.id for x in well_recipe_stocks if x.stock.chem_id == chem_id]
+
+            assert len(di_stock_ids) == 1 or len(di_stock_ids) == 2
+
+            if len(di_stock_ids) == 1:
+                low_stock_id = di_stock_ids[0]
+            else:
+                stock0 = stocks_f.get_stock_by_id(di_stock_ids[0])
+                stock1 = stocks_f.get_stock_by_id(di_stock_ids[1])
+                if stock0.ph < stock1.ph:
+                    low_stock_id = di_stock_ids[0]
+                    high_stock_id = di_stock_ids[1]
+                else:
+                    low_stock_id = di_stock_ids[1]
+                    high_stock_id = di_stock_ids[0]
+
+            ingredient.add_stock(low_stock_id, True)
+            if high_stock_id is not None:
+                ingredient.add_stock(high_stock_id, True)
+
+        else:
+            di_stock_ids = [x.stock.id for x in well_recipe_stocks if x.stock.chem_id == di.chemical.id]
+            assert len(di_stock_ids) == 1
+            low_stock_id = di_stock_ids[0]
+
+            ingredient.add_stock(low_stock_id, False)
+        
 
 
         condition_ingredient = src.objects.ConditionIngredientXml(
@@ -62,37 +101,42 @@ for well_id in design.wells:
         )
         condition.add_ingredient(condition_ingredient)
 
-        used_chem_stocks[di.chemical.id].add(low_stock_id)
-        if high_stock_id is not None:
-            used_chem_stocks[di.chemical.id].add(high_stock_id)
+        # used_chem_stocks[di.chemical.id].add(low_stock_id)
+        # if high_stock_id is not None:
+        #     used_chem_stocks[di.chemical.id].add(high_stock_id)
 
     screen.add_condition(condition)
 
 
-for chem_id in used_chem_stocks:
+for chem_id in ingredient_dict:
+    ingredient = ingredient_dict[chem_id]
+
     chemical = chems_f.get_chem_by_id(chem_id)
 
     # Create the buffer data
     buffer_data = None
-    if phcurve_f.is_chem_curve(chem_id):
-        curve = phcurve_f.get_curve_by_chem_id(chem_id)
-        points = [(x.ph, src.utils.frac2ratio(x.base_fraction)) for x in curve.points[1:]]
-        buffer_data = src.objects.BufferDataXml(titration_points=points)
-    else:
-        if chemical.pka is not None:
-            if chemical.pka_warn:
-                warnings.warn(f'Warning: Chemical {chemical.name} has multiple pKas, using {chemical.pka}')
-            buffer_data = src.objects.BufferDataXml(pka = chemical.pka)
+    # Only create the bufferdata if the ingredient is used in a buffer context
+    if ingredient.is_buffer():
+        if phcurve_f.is_chem_curve(chem_id):
+            curve = phcurve_f.get_curve_by_chem_id(chem_id)
+            points = [(x.ph, src.utils.frac2ratio(x.base_fraction)) for x in curve.points[1:]]
+            buffer_data = src.objects.BufferDataXml(titration_points=points)
+        else:
+            if chemical.pka is not None:
+                if chemical.pka_warn:
+                    warnings.warn(f'Warning: Chemical {chemical.name} has multiple pKas, using {chemical.pka}')
+                buffer_data = src.objects.BufferDataXml(pka = chemical.pka)
+
 
     stocks = src.objects.StocksXml()
-    for stock_id in used_chem_stocks[chem_id]:
+    for stock_id, use_as_buffer in ingredient.stocks:
         stock = stocks_f.get_stock_by_id(stock_id)
         stocks.add_stock(
             src.objects.StockXml(
                 local_id = stock.id,
                 concentration = stock.conc,
                 units = stock.units,
-                use_as_buffer = stock.ph is not None and 'Buffer' in chemical.groups, # TODO need to be more rigorous for use as buffer??
+                use_as_buffer = use_as_buffer,
                 ph = stock.ph,
             )
         )
@@ -108,7 +152,7 @@ for chem_id in used_chem_stocks:
             shortname = chemical.shortname,
             aliases = chemical.aliases,
             cas_number = chemical.cas if chemical.cas is not None else '-1',
-            types = chemical.groups,
+            types = ingredient.types,
             buffer_data = buffer_data,
             stocks = stocks,
         )

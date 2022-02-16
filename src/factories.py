@@ -21,8 +21,8 @@ class ChemicalsFactory(object):
             # First find all the aliases
             aliases = [x['CHEM_ALIAS'] for x in alias_data if x['CHEMICAL_ID'] == chem['CHEMICAL_ID']]
             # Second find the chem groups
-            groups = [constants.chem_groups[x['GROUP_ID']] for x in group_data 
-                if x['GROUP_ID'] in constants.chem_groups.keys() and x['CHEMICAL_ID'] == chem['CHEMICAL_ID']
+            groups = [constants.CHEM_GROUPS[x['GROUP_ID']] for x in group_data 
+                if x['GROUP_ID'] in constants.CHEM_GROUPS.keys() and x['CHEMICAL_ID'] == chem['CHEMICAL_ID']
             ]
             # Construct the chemical
             self.chemicals.append(objects.Chemical(
@@ -62,7 +62,6 @@ class StocksFactory(object):
                 conc = x['STOCK_CONC'],
                 units = x['STOCK_UNITS'],
                 ph = x['STOCK_PH'],
-                name = x['STOCK_NAME'],
             ) for x in stock_data
         ]
 
@@ -163,12 +162,13 @@ class RecipeFactory(object):
 
         recipe_stocks = list()
         for stock in xml_root.find('sourceplates').find('sourceplate').find('plate').find('wells'):
-            recipe_stocks.append(
-                objects.RecipeStock(
-                    stock = self.stocks_factory.get_stock_by_id(int(stock.attrib['barcode'])),
-                    wells = [utils.wellname2id(x.attrib['name']) for x in stock],
+            if stock.attrib['barcode'] != constants.WATER_BARCODE:
+                recipe_stocks.append(
+                    objects.RecipeStock(
+                        stock = self.stocks_factory.get_stock_by_id(int(stock.attrib['barcode'])),
+                        wells = [utils.wellname2id(x.attrib['name']) for x in stock],
+                    )
                 )
-            )
 
         return objects.Recipe(stocks = recipe_stocks)
 
