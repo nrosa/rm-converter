@@ -367,7 +367,7 @@ class VendorXml(BaseXmlObject):
 class VendorPartNumberXml(BaseXmlObject):
     def __init__(self, stock_id: int, use_as_buffer: bool):
         assert isinstance(use_as_buffer, bool)
-        part_str = f'CSIRO-{stock_id}-b' if use_as_buffer else f'CSIRO-{stock_id}'
+        part_str = f'CSIRO-{stock_id}'
         super().__init__(name='vendorPartNumber', text=part_str)
 
 
