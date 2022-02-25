@@ -167,7 +167,7 @@ def main(args):
             src.objects.IngredientXml(
                 name = chemical.name,
                 shortname = chemical.shortname,
-                aliases = chemical.aliases,
+                aliases = chemical.aliases if args.include_aliases else [],
                 cas_number = chemical.cas if chemical.cas is not None else '-1',
                 types = ingredient.types,
                 buffer_data = buffer_data,
@@ -191,6 +191,8 @@ if __name__ == '__main__':
     parser.add_argument('--design-xml', type=str, required=True)
     parser.add_argument('--output-xml', type=str, default='rockmaker_design.xml')
     parser.add_argument('--data-dir', type=str, default='data')
+
+    parser.add_argument('--include-aliases', action='store_true')
 
     args = parser.parse_args()
 

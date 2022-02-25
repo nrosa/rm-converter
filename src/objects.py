@@ -258,11 +258,11 @@ class IngredientXml(BaseXmlObject):
 
 class ShortNameXml(BaseXmlObject):
     def __init__(self, shortname: str):
-        super().__init__(name='shortName', text='C3'+shortname)    
+        super().__init__(name='shortName', text=shortname)    
 
 class NameXml(BaseXmlObject):
     def __init__(self, name: str):
-        super().__init__(name='name', text='C3'+name)
+        super().__init__(name='name', text=name)
 
 class AliasesXml(BaseXmlObject):
     def __init__(self, aliases: List[str]):
