@@ -166,7 +166,7 @@ def main(args):
         screen.add_ingredient(
             src.objects.IngredientXml(
                 name = chemical.name,
-                shortname = chemical.shortname,
+                shortname = chemical.id,
                 aliases = chemical.aliases if args.include_aliases else [],
                 cas_number = chemical.cas if chemical.cas is not None else '-1',
                 types = ingredient.types,
