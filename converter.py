@@ -9,6 +9,7 @@ from xml.dom import minidom
 
 import argparse
 
+
 def main(args):
 
     # Load all the object factories
@@ -163,10 +164,17 @@ def main(args):
         if chemical.cas is None:
             warnings.warn(f'Warning: Chemical {chemical.name} has no CAS, this will need to be resolved when importing into RockMaker')
 
+        shortname = src.utils.get_shortname_from_stocklid(chemical, stocks_f)
+        if shortname is None:
+            if len(chemical.aliases) > 0:
+                src.utils.get_shortname_from_aliases(chemical.aliases)
+            else:
+                shortname = name[:constants.SHRTNAME_LEN] if len(chemical.name) > constants.SHRTNAME_LEN else chemical.name
+
         screen.add_ingredient(
             src.objects.IngredientXml(
                 name = chemical.name,
-                shortname = chemical.id,
+                shortname = shortname,
                 aliases = chemical.aliases if args.include_aliases else [],
                 cas_number = chemical.cas if chemical.cas is not None else '-1',
                 types = ingredient.types,

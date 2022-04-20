@@ -3,8 +3,8 @@ from typing import Optional, List
 import xml.etree.ElementTree as et
 import warnings
 
-from src import constants
-from src.constants import SHRTNAME_LEN
+from . import constants
+from . import utils
 
 
 ####################################################################################################
@@ -30,15 +30,6 @@ class Chemical(object):
 
         self.pka_warn = False
 
-        shortname = ''
-        if len(self.aliases) > 0:
-            shortname = sorted(aliases, key=lambda x: len(x))[0]
-            if len(shortname) > SHRTNAME_LEN:
-                shortname = shortname[:SHRTNAME_LEN]
-        else:
-            shortname = name[:SHRTNAME_LEN] if len(name) > SHRTNAME_LEN else name
-
-        self.shortname = shortname
 
 
 class PhPoint(object):
@@ -79,12 +70,21 @@ class PhCurve(object):
 
 
 class Stock(object):
-    def __init__(self, stock_id: int, chem_id: int, conc: float, units: str, ph: Optional[float]):
+    def __init__(
+        self,
+        stock_id: int,
+        chem_id: int,
+        conc: float,
+        units: str,
+        ph: Optional[float],
+        lid_name: str,
+    ):
         self.id = stock_id
         self.chem_id = chem_id
         self.conc = conc
         self.units = units
         self.ph = ph
+        self.lid_name = lid_name
         self.local_id = None
 
 
