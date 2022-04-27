@@ -25,6 +25,7 @@ class ChemicalsFactory(object):
             groups = [constants.CHEM_GROUPS[x['GROUP_ID']] for x in group_data 
                 if x['GROUP_ID'] in constants.CHEM_GROUPS.keys() and x['CHEMICAL_ID'] == chem['CHEMICAL_ID']
             ]
+
             # Construct the chemical
             self.chemicals.append(objects.Chemical(
                 chem_id = chem['CHEMICAL_ID'],
@@ -50,6 +51,9 @@ class ChemicalsFactory(object):
             if chem_name.lower() == chemical.name.lower():
                 return chemical
 
+    def get_all_chemicals(self):
+        return self.chemicals
+
 
 class StocksFactory(object):
     def __init__(self, stock_json_path):
@@ -63,6 +67,7 @@ class StocksFactory(object):
                 conc = x['STOCK_CONC'],
                 units = x['STOCK_UNITS'],
                 ph = x['STOCK_PH'],
+                lid_name = x['STOCK_LIDS']
             ) for x in stock_data
         ]
 
@@ -84,6 +89,12 @@ class StocksFactory(object):
     def get_stock_by_name(self, name: str) -> Optional[objects.Stock]:
         for stock in self.stocks:
             if stock.name == name:
+                return stock
+        return None
+
+    def get_first_stock_by_chemid(self, chem_id: int):
+        for stock in self.stocks:
+            if stock.chem_id == chem_id:
                 return stock
         return None
 
