@@ -73,10 +73,19 @@ class PhCurve(object):
 
 
 class Stock(object):
-    def __init__(self, stock_id: int, chem_id: int, conc: float, units: str, ph: Optional[float]):
+    def __init__(
+        self,
+        stock_id: int,
+        chem_id: int,
+        conc: float,
+        units: str,
+        ph: Optional[float],
+        lid_name: str,
+    ):
         self.id = stock_id
         self.chem_id = chem_id
         self.conc = conc
         self.units = units
         self.ph = ph
         self.local_id = None
+        self.lid_name = lid_name

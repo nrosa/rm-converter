@@ -167,7 +167,7 @@ def main(args):
         shortname = src.utils.get_shortname_from_stocklid(chemical, stocks_f)
         if shortname is None:
             if len(chemical.aliases) > 0:
-                src.utils.get_shortname_from_aliases(chemical.aliases)
+                shortname = src.utils.get_shortname_from_aliases(chemical.aliases)
             else:
                 shortname = name[:constants.SHRTNAME_LEN] if len(chemical.name) > constants.SHRTNAME_LEN else chemical.name
 

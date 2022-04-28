@@ -4,8 +4,8 @@ from typing import Optional, List
 import xml.etree.ElementTree as et
 import warnings
 
-from . import constants
-from . import utils
+from src import constants
+from src import utils
 
 
 class BaseXmlObject(object):
