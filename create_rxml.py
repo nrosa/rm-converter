@@ -39,7 +39,7 @@ def main(args):
 
     # Keep track of which chemicals and stocks have been used so far, so I only add the required ones to the ingredients
     # Key is chem_id
-    ingredient_dict = dict() # dict[objects.Ingredient]
+    ingredient_dict = dict() # dict[objects.IngredientTracker]
 
     for well_id in design.wells:
         # if well_id != 45 and well_id != 42: #and well_id != 77:#77:
@@ -51,7 +51,7 @@ def main(args):
         for di in dw.items:
             # Create ingredient object
             if di.chemical.id not in ingredient_dict:
-                ingredient_dict[di.chemical.id] = src.objects.Ingredient(di.chemical)
+                ingredient_dict[di.chemical.id] = src.objects.IngredientTracker()
             ingredient = ingredient_dict[di.chemical.id]
 
             # Add the type context for this Ingredient

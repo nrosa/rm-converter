@@ -1,64 +1,58 @@
 from __future__ import annotations
 from typing import Optional, List
 
-from src import constants
 
-class DesignItem(object):
-    def __init__(
-        self,
-        chemical: object,
-        item_class: str,
-        concentration: float,
-        units: str,
-        ph: Optional[float]
-    ):
-        self.chemical = chemical
-        self.item_class = item_class
-        self.concentration = concentration
-        self.units = units
-        self.ph = ph
+class ConditionIngredient(object):
+    def __init__(self, conc, cond_type, local_id):
+        self.conc = conc
+        self.type = cond_type
+        self.local_id = local_id
 
-class DesignWell(object):
-    def __init__(self, items: List[DesignItem]):
-        self.items = items
-
-class Design(object):
+class Condition(object):
     def __init__(self):
-        # Dict that maps a well id [1,96] to a DesignWell
-        self.wells = dict()
+        self.condition_ingredients = list()
 
-    def add_well(self, well: DesignWell, well_id: int):
-        self.wells[well_id] = well
+    def add_condition_ingredient(self, condition_ingredient):
+        assert isinstance(condition_ingredient, ConditionIngredient)
+        self.condition_ingredients.append(condition_ingredient)
 
+class Conditions(object):
+    def __init__(self):
+        self.conditions = list()
 
-class RecipeStock(object):
-    def __init__(self, stock: Stock, wells: List[int]):
-        self.stock = stock
-        self.wells = wells
+    def add_condition(self, condition):
+        assert isinstance(condition, Condition)
+        self.conditions.append(condition)
 
-class Recipe(object):
-    def __init__(self, stocks: List[RecipeStock]):
-        self.stocks = stocks
+class Stock(object):
+    def __init__(self, local_id, conc, units, buffer):
+        self.local_id = local_id
+        self.conc = conc,
+        self.units = units
+        self.buffer = buffer
 
-    def get_stocks_for_well(self, well_id: int):
-        return [x for x in self.stocks if well_id in x.wells]
-
-# Class for keeping track of the info for a Forumlatrix ingredient
 class Ingredient(object):
-    def __init__(self, chemical: Chemical):
-        self.chemical = chemical
+    def __init__(self, name, units):
+        self.name = name
+        self.stocks = list()
 
-        self.types = set()
-        # Set[Tuple[stock_id: int, use_as_buffer: bool]]
-        self.stocks = set()
+    def add_stock(self, stock):
+        assert isinstance(stock, Stock)
+        self.local_ids.append(local_id)
 
-    def add_type(self, ingredient_type: str): 
-        self.types.add(ingredient_type)
+class Ingredients(object):
+    def __init__(self):
+        self.ingredients = list()
 
-    def add_stock(self, stock_id: int, use_as_buffer: bool):
-        self.stocks.add((stock_id, use_as_buffer))
+    def add_ingredient(self, ingredient):
+        assert isinstance(ingredient, Ingredient)
+        self.ingredients.append(ingredient)
 
-    def is_buffer(self):
-        return constants.BUFFER in self.types
+class Screen(object):
+    def __init__(self, ingredients, conditions):
+        self.ingredients = ingredients
+        self.conditions = conditions
+
+
 
 

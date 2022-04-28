@@ -6,26 +6,7 @@ import warnings
 
 from src import constants
 from src import utils
-
-
-class BaseXmlObject(object):
-    def __init__(self, name: str, text: str = ''):
-        self.text = text
-        self.name = name
-        self.children = []
-
-    def add_child(self, child: BaseXmlObject):
-        assert isinstance(child, BaseXmlObject)
-        self.children.append(child)
-
-    def get_xml_element(self) -> et.Element:
-        self_element = et.Element(self.name)
-        self_element.text = self.text
-
-        for child in self.children:
-            self_element.append(child.get_xml_element())
-
-        return self_element
+from src.objects.xml import BaseXmlObject
 
 
 class ConditionsXml(BaseXmlObject):
