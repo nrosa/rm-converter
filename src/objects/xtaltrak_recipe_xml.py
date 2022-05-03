@@ -37,7 +37,7 @@ class StockXml(BaseXmlObject):
         super().__init__(name='stock', attrib = attrib)
 
 
-class StocksXml(BaseXmlObject);
+class StocksXml(BaseXmlObject):
     def __init__(self):
         super().__init__(name='stocks')
         # TODO Add stock

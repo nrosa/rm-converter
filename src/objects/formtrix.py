@@ -3,7 +3,7 @@ from typing import Optional, List
 
 
 class ConditionIngredient(object):
-    def __init__(self, conc, cond_type, local_id):
+    def __init__(self, conc: float, cond_type: str, local_id: int):
         self.conc = conc
         self.type = cond_type
         self.local_id = local_id
@@ -25,20 +25,25 @@ class Conditions(object):
         self.conditions.append(condition)
 
 class Stock(object):
-    def __init__(self, local_id, conc, units, buffer):
+    def __init__(self, local_id: int, units: str, buffer: bool):
         self.local_id = local_id
-        self.conc = conc,
         self.units = units
         self.buffer = buffer
 
 class Ingredient(object):
-    def __init__(self, name, units):
+    def __init__(self, name):
         self.name = name
+        self.aliases = list()
         self.stocks = list()
 
     def add_stock(self, stock):
         assert isinstance(stock, Stock)
-        self.local_ids.append(local_id)
+        self.stocks.append(stock)
+
+    def add_alias(self, alias):
+        assert isinstance(alias, str)
+        self.aliases.append(alias)
+
 
 class Ingredients(object):
     def __init__(self):

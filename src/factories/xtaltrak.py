@@ -4,7 +4,9 @@ from typing import Optional
 import json
 import xml.etree.ElementTree as et
 
-from src import constants, objects, utils
+from src import constants, utils
+
+import src.objects.xtaltrak as objects
 
 
 class ChemicalsFactory(object):

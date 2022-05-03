@@ -13,29 +13,29 @@ import argparse
 def main(args):
 
     # Load all the object factories
-    chems_f = src.factories.ChemicalsFactory(
+    chems_f = src.factories.xtaltrak.ChemicalsFactory(
         os.path.join(args.data_dir, 'chemicals.json'),
         os.path.join(args.data_dir, 'chemical_alias.json'),
         os.path.join(args.data_dir, 'chem_group_members.json'),
     )
-    stocks_f = src.factories.StocksFactory(
+    stocks_f = src.factories.xtaltrak.StocksFactory(
         os.path.join(args.data_dir, 'stocks.json'),
         )
-    phcurve_f = src.factories.PhCurveFactory(
+    phcurve_f = src.factories.xtaltrak.PhCurveFactory(
         os.path.join(args.data_dir, 'ph_curves.json'),
         os.path.join(args.data_dir, 'ph_points.json'),
         stocks_f
     )
-    design_f = src.factories.DesignFactory(chems_f)
-    recipe_f = src.factories.RecipeFactory(stocks_f)
-    lid_f = src.factories.LocalIdFactory()
+    design_f = src.factories.xtaltrak.DesignFactory(chems_f)
+    recipe_f = src.factories.xtaltrak.RecipeFactory(stocks_f)
+    lid_f = src.factories.misc.LocalIdFactory()
 
     # Read the design and recipe files
     design = design_f.get_design_from_xml(design_xml_path = args.design_xml)
     recipe = recipe_f.get_recipe_from_xml(recipe_xml_path = args.recipe_xml)
 
     # Start contructing the rockmaker objects based upon the design and recipe
-    screen = src.objects.ScreenXml()
+    screen = src.objects.rmxml.ScreenXml()
 
     # Keep track of which chemicals and stocks have been used so far, so I only add the required ones to the ingredients
     # Key is chem_id
@@ -46,12 +46,12 @@ def main(args):
         #     continue
         dw = design.wells[well_id]
 
-        condition = src.objects.ConditionXml()
+        condition = src.objects.rmxml.ConditionXml()
 
         for di in dw.items:
             # Create ingredient object
             if di.chemical.id not in ingredient_dict:
-                ingredient_dict[di.chemical.id] = src.objects.IngredientTracker()
+                ingredient_dict[di.chemical.id] = src.objects.misc.IngredientTracker()
             ingredient = ingredient_dict[di.chemical.id]
 
             # Add the type context for this Ingredient
@@ -109,7 +109,7 @@ def main(args):
             low_lid = lid_f.get_local_id(di.chemical.id, low_stock_id)
             high_lid = lid_f.get_local_id(di.chemical.id, high_stock_id)
 
-            condition_ingredient = src.objects.ConditionIngredientXml(
+            condition_ingredient = src.objects.rmxml.ConditionIngredientXml(
                 item_class = di.item_class,
                 concentration = di.concentration,
                 ph = di.ph,
@@ -137,19 +137,19 @@ def main(args):
             if phcurve_f.is_chem_curve(chem_id):
                 curve = phcurve_f.get_curve_by_chem_id(chem_id)
                 points = [(x.ph, x.acid_fraction) for x in curve.points]
-                buffer_data = src.objects.BufferDataXml(titration_points=points)
+                buffer_data = src.objects.rmxml.BufferDataXml(titration_points=points)
             else:
                 if chemical.pka is not None:
                     if chemical.pka_warn:
                         warnings.warn(f'Warning: Chemical {chemical.name} has multiple pKas, using {chemical.pka}')
-                    buffer_data = src.objects.BufferDataXml(pka = chemical.pka)
+                    buffer_data = src.objects.rmxml.BufferDataXml(pka = chemical.pka)
 
 
-        stocks = src.objects.StocksXml()
+        stocks = src.objects.rmxml.StocksXml()
         for stock_id, use_as_buffer in ingredient.stocks:
             stock = stocks_f.get_stock_by_id(stock_id)
             stocks.add_stock(
-                src.objects.StockXml(
+                src.objects.rmxml.StockXml(
                     local_id = lid_f.get_local_id(chem_id, stock.id),
                     stock_id = stock.id,
                     concentration = stock.conc,
@@ -172,7 +172,7 @@ def main(args):
                 shortname = name[:constants.SHRTNAME_LEN] if len(chemical.name) > constants.SHRTNAME_LEN else chemical.name
 
         screen.add_ingredient(
-            src.objects.IngredientXml(
+            src.objects.rmxml.IngredientXml(
                 name = chemical.name,
                 shortname = shortname,
                 aliases = chemical.aliases if args.include_aliases else [],

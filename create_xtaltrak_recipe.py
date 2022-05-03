@@ -10,15 +10,19 @@ from xml.dom import minidom
 import argparse
 
 
+
 def main(args):
 
     # Load rxml into objects
+    screen = src.factories.formtrix.screen_from_rxml('Shotgun_rxml.xml')
 
     # Get stocks per well
 
     # Calculate volumes
 
     # Write XML
+
+    exit()
 
     
     xmlstr = minidom.parseString(et.tostring(screen.get_xml_element())).toprettyxml(indent="   ")
