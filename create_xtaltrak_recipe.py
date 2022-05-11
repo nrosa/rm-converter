@@ -16,15 +16,17 @@ def main(args):
     # Load rxml into objects
     screen = src.factories.formtrix.screen_from_rxml('Shotgun_rxml.xml')
 
-    # Get stocks per well
-
     # Calculate volumes
+    screen.add_recipe_volume(args.volume)
 
-    # Write XML
+    # Convert to xtaltrak recipe object
+
+    # Add water ingredient
+
 
     exit()
 
-    
+    # Write XML
     xmlstr = minidom.parseString(et.tostring(screen.get_xml_element())).toprettyxml(indent="   ")
     with open(args.output_xml, "w") as f:
         f.write(xmlstr)

@@ -1,6 +1,8 @@
 from __future__ import annotations
 from typing import Optional, List, Dict
 
+import abc
+
 import xml.etree.ElementTree as et
 
 class BaseXmlObject(object):
@@ -23,3 +25,35 @@ class BaseXmlObject(object):
             self_element.append(child.get_xml_element())
 
         return self_element
+
+class BaseXmlObject2(object, metaclass=abc.ABCMeta):
+    def __init__(self):
+        pass
+
+    def get_name(self):
+        return ""
+
+    def get_text(self):
+        return ""
+
+    def get_attrib(self):
+        return dict()
+
+    def get_children(self):
+        return list()
+
+
+    def get_xml_element(self) -> et.Element:
+        self_element = et.Element(self.get_name())
+        self_element.text = self.get_text()
+        self_element.attrib = self.get_attrib()
+
+        for child in self.get_children():
+            self_element.append(child.get_xml_element())
+
+        return self_element
+
+
+
+
+

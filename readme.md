@@ -11,4 +11,4 @@ eg.
 
 ## Creating a CrystalTrak recipe file
 
-python3 
+python3 create_xtaltrak_recipe.py --rxml Shotgun_rxml.xml 
