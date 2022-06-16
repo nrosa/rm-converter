@@ -49,7 +49,7 @@ def screen_from_rxml(rxml_path: str):
                 units = stock_xml.find('units').text,
                 ph = float(stock_xml.find('pH').text) if stock_xml.find('pH') is not None else None,
                 buffer = stock_xml.find('useAsBuffer') == 'true',
-                part_number = stock_xml.find('vendorPartNumber').text,
+                part_number = stock_xml.find('vendorPartNumber').text if stock_xml.find('vendorPartNumber') is not None else '',
                 ingredient = ingredient,
             ))
 
