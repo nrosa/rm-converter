@@ -1,5 +1,5 @@
 import src
-
+import src.objects.xtaltrak_recipe_xml as xtal_xml
 from collections import defaultdict
 import warnings
 import os
@@ -14,20 +14,88 @@ import argparse
 def main(args):
 
     # Load rxml into objects
-    screen = src.factories.formtrix.screen_from_rxml('Shotgun_rxml.xml')
+    screen = src.factories.formtrix.screen_from_rxml(args.rxml)
 
     # Calculate volumes
     screen.add_recipe_volume(args.volume)
 
     # Convert to xtaltrak recipe object
 
+    # Create stocks
+    stocks = xtal_xml.Stocks()
+    for ftrix_stock in screen.get_stocks():
+        stocks.add_stock(
+            src.factories.formtrix.to_xtaltrak_recipe_stock(ftrix_stock)
+        )
+    
+
+    wells = xtal_xml.Wells(args.volume)
+    for ftrix_stock in screen.get_stocks():
+        wells.add_stock(
+            src.factories.formtrix.to_xtaltrak_recipe_wellstock(ftrix_stock)
+        )
+
+    plate = xtal_xml.Plate(wells)
+
+    # Create sourceplates
+    description = ''
+    sourceplate = xtal_xml.SourcePlate(description, stocks, plate)
+    sourceplates = xtal_xml.SourcePlates()
+    sourceplates.add_sourceplate(sourceplate)
+    name = ''.join(args.rxml.split('.')[:-1])
+    job = xtal_xml.Job(name, sourceplates)
+
     # Add water ingredient
+    # [well_id: volume]
+    global_usage = defaultdict(float)
+    for ftrix_stock in screen.get_stocks():
+        for well_id in ftrix_stock.usages:
+            global_usage[well_id] += ftrix_stock.usages[well_id]
+
+    # invert global usages so it reflects water usage
+    for well_id in global_usage:
+        global_usage[well_id] = round(args.volume - global_usage[well_id], 1)
+    # Delete zero water entries
+    global_usage = {k:round(v,1) for k,v in global_usage.items() if round(v,1) > 0}
+    # Add water stock
+    stocks.add_stock(xtal_xml.Stock(
+        barcode='',
+        comments='Automatically generated.',
+        conc=100,
+        count=len(global_usage),
+        cunits='v/v',
+        density=None,
+        name='water',
+        ph=None,
+        viscosity=3,
+        volatility=None,
+        volume=sum([global_usage[x] for x in global_usage]),
+        vunits='ul',
+    ))
+    # Add water wells
+    water_well_stock = xtal_xml.WellStock(
+        barcode='',
+        comments='Automatically generated.',
+        conc=100,
+        cunits='v/v',
+        density=None,
+        name='water',
+        ph=None,
+        viscosity=3,
+        volatility=None,
+    )
+    for well_id in sorted(list(global_usage.keys())):
+        water_well_stock.add_well(xtal_xml.Well(
+            src.utils.wellid2name(well_id),
+            global_usage[well_id],
+            'ul',
+        ))
+    wells.add_stock(water_well_stock)
 
 
-    exit()
 
     # Write XML
-    xmlstr = minidom.parseString(et.tostring(screen.get_xml_element())).toprettyxml(indent="   ")
+    xmlstr = minidom.parseString(et.tostring(job.get_xml_element())).toprettyxml(indent="   ")
     with open(args.output_xml, "w") as f:
         f.write(xmlstr)
 
@@ -38,8 +106,6 @@ if __name__ == '__main__':
     # Dataset parameters
     parser.add_argument('--rxml', type=str, required=True)
     parser.add_argument('--output-xml', type=str, default='xtaltrak_recipe.xml')
-    parser.add_argument('--data-dir', type=str, default='data')
-
     parser.add_argument('--volume', type=float, default=1500, help='volume per well in uL')
 
     args = parser.parse_args()
