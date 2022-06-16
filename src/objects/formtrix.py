@@ -38,15 +38,19 @@ class ConditionIngredient(object):
         ph : Optional[float],
         stock: Stock,
         high_ph_stock: Optional[Stock],
+        well_id: Optional[int] = None,
     ):
         self.conc = conc
         self.type = cond_type
         self.ph = ph
         self.stock = stock
         self.high_ph_stock = high_ph_stock 
+        self.well_id = well_id
 
     def add_recipe_volume(self, well_volume):
         total_volume = (well_volume * self.conc) / self.stock.conc
+        self.volume = None
+        self.high_ph_volume = None
         if self.type == 'Buffer':
             if self.high_ph_stock is not None:
                 assert self.stock.ingredient == self.high_ph_stock.ingredient
@@ -95,6 +99,16 @@ class ConditionIngredient(object):
         # Easy case
             self.volume = total_volume
 
+        # Track the total volumes
+        if self.volume is not None:
+            self.stock.add_usage(self.well_id, self.volume)
+        if self.high_ph_volume is not None:
+            self.high_ph_stock.add_usage(self.well_id, self.high_ph_volume)
+
+
+
+
+
 
 
 
@@ -107,10 +121,8 @@ class Condition(object):
         self.condition_ingredients.append(condition_ingredient)
 
     def add_recipe_volume(self, volume):
-        total_volume = 0
         for cond_ingred in self.condition_ingredients:
             cond_ingred.add_recipe_volume(volume)
-            total_volume += cond_ingred.volume
 
 
 
@@ -146,6 +158,19 @@ class Stock(object):
         self.part_number = part_number
         self.ingredient = ingredient
 
+        # Used to track total volume in screen
+        # {well_number: volume}
+        self.usages = dict()
+
+    def add_usage(self, well_id, volume):
+        self.usages[well_id] = volume
+
+    def get_count(self):
+        return len(self.usages)
+
+    def get_total_volume(self):
+        return sum([self.usages[x] for x in self.usages])
+
 
 class Ingredient(object):
     def __init__(self, name, buffer_data):
@@ -178,6 +203,14 @@ class Ingredients(object):
                     return stock
         return None
 
+    def __iter__(self):
+        self.iter = iter(self.ingredients)
+        return self
+
+    def __next__(self):
+        return next(self.iter)
+
+
 class Screen(object):
     def __init__(self, ingredients, conditions):
         self.ingredients = ingredients
@@ -185,6 +218,14 @@ class Screen(object):
 
     def add_recipe_volume(self, volume):
         self.conditions.add_recipe_volume(volume)
+
+    def get_stocks(self):
+        global_stocks = set()
+        for ingredient in self.ingredients:
+            for stock in ingredient.stocks:
+                global_stocks.add(stock)
+
+        return global_stocks
 
 
 

@@ -41,11 +41,11 @@ class Stock(BaseXmlObject2):
             'conc' : str(self.conc),
             'count' : str(self.count),
             'cunits' : self.cunits,
-            'density' : str(self.density),
+            'density' : '' if self.density is None else str(self.density),
             'name' : self.name,
-            'pH' : str(self.ph),
-            'viscosity' : str(self.viscosity),
-            'volatility' : str(self.volatility),
+            'pH' : '' if self.ph is None else str(self.ph),
+            'viscosity' : '' if self.viscosity is None else str(self.viscosity),
+            'volatility' : '' if self.volatility is None else str(self.volatility),
             'volume' : str(self.volume),
             'vunits' : self.vunits
 
@@ -78,7 +78,6 @@ class SourcePlate(BaseXmlObject2):
         self.stocks = stocks
         assert isinstance(plate, Plate)
         self.plate = plate
-        super().__init__(name='sourceplate', attrib=attrib)
 
     def get_name(self):
         return 'sourceplate'
@@ -176,15 +175,15 @@ class WellStock(BaseXmlObject2):
         viscosity,
         volatility
     ):
-        self.barcode
-        self.comments
-        self.conc
-        self.self.cunits
-        self.density
-        self.name
-        self.ph
-        self.viscosity
-        self.volatility
+        self.barcode = barcode
+        self.comments = comments
+        self.conc = conc
+        self.cunits = cunits
+        self.density = density
+        self.name = name
+        self.ph = ph
+        self.viscosity = viscosity
+        self.volatility = volatility
 
         self.wells = list()
 
@@ -201,11 +200,11 @@ class WellStock(BaseXmlObject2):
             'comments' : self.comments,
             'conc' : str(self.conc),
             'cunits' : self.cunits,
-            'density' : str(self.density),
+            'density' : '' if self.density is None else str(self.density),
             'name' : self.name,
-            'pH' : str(self.ph),
-            'viscosity' : str(self.viscosity),
-            'volatility' : str(self.volatility),
+            'pH' : '' if self.ph is None else str(self.ph),
+            'viscosity' : '' if self.viscosity is None else str(self.viscosity),
+            'volatility' : '' if self.volatility is None else str(self.volatility),
         }
 
     def get_children(self):
@@ -224,7 +223,7 @@ class Well(BaseXmlObject2):
     def get_attrib(self):
         return {
             'name' : self.well_name,
-            'volume' : str(self.volume),
+            'volume' : str(round(self.volume,1)),
             'vunits' : self.vunits,
         }
         

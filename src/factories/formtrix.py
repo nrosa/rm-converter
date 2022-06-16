@@ -1,6 +1,7 @@
 import xml.etree.ElementTree as et
 
 from src import objects
+from src import utils
 
 def screen_from_rxml(rxml_path: str):
     xml_tree = et.parse(rxml_path)
@@ -57,7 +58,7 @@ def screen_from_rxml(rxml_path: str):
 
     # Create the conditions 
     conditions = objects.formtrix.Conditions()
-    for condition_xml in xml_root.find('conditions').findall('condition'):
+    for i, condition_xml in enumerate(xml_root.find('conditions').findall('condition')):
         condition = objects.formtrix.Condition()
         for cond_ingred_xml in condition_xml.findall('conditionIngredient'):
             # Find the stocks to be used
@@ -75,10 +76,50 @@ def screen_from_rxml(rxml_path: str):
                     cond_type = cond_ingred_xml.find('type').text,
                     ph = float(cond_ingred_xml.find('pH').text) if cond_ingred_xml.find('pH') is not None else None,
                     stock = stock,
-                    high_ph_stock = high_ph_stock
+                    high_ph_stock = high_ph_stock,
+                    well_id = i,
             ))
 
         conditions.add_condition(condition)
 
     return objects.formtrix.Screen(ingredients, conditions)
+
+def to_xtaltrak_recipe_stock(stock):
+    assert isinstance(stock, objects.formtrix.Stock)
+    return objects.xtaltrak_recipe_xml.Stock(
+        barcode='',
+        comments='',
+        conc=stock.conc,
+        count=stock.get_count(),
+        cunits=stock.units,
+        density=None,
+        name=stock.ingredient.name,
+        ph=stock.ph,
+        viscosity=None,
+        volatility=None,
+        volume=stock.get_total_volume(),
+        vunits='ul',
+    )
+
+def to_xtaltrak_recipe_wellstock(stock):
+    assert isinstance(stock, objects.formtrix.Stock)
+    well_stock = objects.xtaltrak_recipe_xml.WellStock(
+        barcode='',
+        comments='',
+        conc=stock.conc,
+        cunits=stock.units,
+        density=None,
+        name=stock.ingredient.name,
+        ph=stock.ph,
+        viscosity=None,
+        volatility=None
+    )
+    for well_id in stock.usages:
+        well_stock.add_well(objects.xtaltrak_recipe_xml.Well(
+            utils.wellid2name(well_id),
+            stock.usages[well_id],
+            'ul',
+        ))
+    return well_stock
+        
         
