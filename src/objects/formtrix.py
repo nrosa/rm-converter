@@ -1,10 +1,12 @@
 from __future__ import annotations
 from typing import Optional, List
 
+import numpy as np
+
 class TitrationPoint(object):
     def __init__(self, ph, a2b_ratio):
         self.ph = ph
-        self.a2b_ration = a2b_ratio
+        self.a2b_ratio = a2b_ratio
 
 
 class TitrationTable(object):
@@ -13,6 +15,13 @@ class TitrationTable(object):
 
     def add_point(self, ph, a2b_ratio):
         self.points.append(TitrationPoint(ph, a2b_ratio))
+
+    def __iter__(self):
+        self.iter = iter(self.points)
+        return self
+
+    def __next__(self):
+        return next(self.iter)
 
 
 class BufferData(object):
@@ -37,21 +46,55 @@ class ConditionIngredient(object):
         self.high_ph_stock = high_ph_stock 
 
     def add_recipe_volume(self, well_volume):
+        total_volume = (well_volume * self.conc) / self.stock.conc
         if self.type == 'Buffer':
             if self.high_ph_stock is not None:
                 assert self.stock.ingredient == self.high_ph_stock.ingredient
+                # Calc the volume with the henderson hasselback
                 if self.stock.ingredient.buffer_data.pka is not None:
                     pka = self.stock.ingredient.buffer_data.pka
                     # Calculate the mix with the henderson hasselbalch equation
-                    base_2_acid_ratio = 10 ** (self.ph - pka)
+                    desired_ratio = 10 ** (self.ph - pka)
+                    low_ratio = 10 ** (self.stock.ph - pka)
+                    high_ratio = 10 ** (self.high_ph_stock.ph - pka)
 
-                    total_volume = (well_volume * self.conc) / self.stock.conc
+                    low_acid = 1 / (1 + low_ratio)
+                    high_acid = 1 / (1+ high_ratio)
 
-                    self.volume = 
-                    self.high_ph_volume = 
+                    low_base = 1 / (1 + 1 / low_ratio)
+                    high_base = 1 / (1 + 1 / high_ratio) 
 
+                    low_fraction_numer = ((desired_ratio * high_acid) - high_base)
+                    low_fraction_denom = (low_base - high_base - (desired_ratio * (low_acid - high_acid)))
+                    low_fraction = low_fraction_numer / low_fraction_denom
+
+                    assert self.stock.conc == self.high_ph_stock.conc
+
+                    self.volume = low_fraction * total_volume
+                    self.high_ph_volume = (1-low_fraction) * total_volume
+
+
+                elif self.stock.ingredient.buffer_data.titration_table is not None:
+                    a2b_ratio = None
+                    min_dist = np.inf
+                    for point in self.stock.ingredient.buffer_data.titration_table:
+                        dist = np.abs(point.ph - self.ph)
+                        if dist < min_dist:
+                            min_dist = dist
+                            a2b_ratio = point.a2b_ratio
+                    low_fraction = a2b_ratio / 100
+
+                    self.volume = low_fraction * total_volume
+                    self.high_ph_volume = (1-low_fraction) * total_volume
+                else:
+                    raise Exception(f'No pka or titration table for buffer: {self.stock.ingredient.name}')
+            else:
+                assert self.ph == self.stock.ph
+                self.volume = total_volume
+        else:
         # Easy case
-        self.volume = (well_volume * self.conc) / self.stock.conc
+            self.volume = total_volume
+
 
 
 
@@ -67,8 +110,8 @@ class Condition(object):
         total_volume = 0
         for cond_ingred in self.condition_ingredients:
             cond_ingred.add_recipe_volume(volume)
-        #     total_volume += cond_ingred.volume
-        # print(total_volume)
+            total_volume += cond_ingred.volume
+
 
 
 class Conditions(object):
@@ -82,6 +125,7 @@ class Conditions(object):
     def add_recipe_volume(self, volume):
         for condition in self.conditions:
             condition.add_recipe_volume(volume)
+
 
 
 class Stock(object):
