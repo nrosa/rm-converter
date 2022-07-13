@@ -11,13 +11,14 @@ class Stock(BaseXmlObject2):
         conc,
         count,
         cunits,
-        density,
         name,
-        ph,
-        viscosity,
-        volatility,
         volume,
         vunits,
+        density=None,
+        ph=None,
+        viscosity=None,
+        volatility=None,
+        
     ):
 
         self.barcode = barcode
@@ -46,7 +47,7 @@ class Stock(BaseXmlObject2):
             'pH' : '' if self.ph is None else str(self.ph),
             'viscosity' : '' if self.viscosity is None else str(self.viscosity),
             'volatility' : '' if self.volatility is None else str(self.volatility),
-            'volume' : str(self.volume),
+            'volume' : str(round(self.volume,1)),
             'vunits' : self.vunits
 
         }
@@ -169,11 +170,11 @@ class WellStock(BaseXmlObject2):
         comments,
         conc,
         cunits,
-        density,
         name,
-        ph,
-        viscosity,
-        volatility
+        density=None,
+        ph=None,
+        viscosity=None,
+        volatility=None
     ):
         self.barcode = barcode
         self.comments = comments

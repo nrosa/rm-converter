@@ -202,12 +202,12 @@ class UnitsXml(BaseXmlObject):
 
 class VendorXml(BaseXmlObject):
     def __init__(self):
-        super().__init__(name='vendorName', text='CSIRO')
+        super().__init__(name='vendorName', text=constants.PARTNUMBER_PREFIX)
 
 class VendorPartNumberXml(BaseXmlObject):
     def __init__(self, stock_id: int, use_as_buffer: bool):
         assert isinstance(use_as_buffer, bool)
-        part_str = f'CSIRO-{stock_id}'
+        part_str = f'{constants.PARTNUMBER_PREFIX}-{stock_id}'
         super().__init__(name='vendorPartNumber', text=part_str)
 
 

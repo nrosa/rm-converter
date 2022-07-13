@@ -59,36 +59,30 @@ def main(args):
     global_usage = {k:round(v,1) for k,v in global_usage.items() if round(v,1) > 0}
     # Add water stock
     stocks.add_stock(xtal_xml.Stock(
-        barcode='',
-        comments='Automatically generated.',
-        conc=100,
+        barcode=src.constants.WATER.barcode,
+        comments=src.constants.WATER.comment,
+        conc=src.constants.WATER.conc,
         count=len(global_usage),
-        cunits='v/v',
-        density=None,
-        name='water',
-        ph=None,
-        viscosity=3,
-        volatility=None,
+        cunits=src.constants.WATER.units,
+        name=src.constants.WATER.name,
+        viscosity=src.constants.WATER.viscosity,
         volume=sum([global_usage[x] for x in global_usage]),
-        vunits='ul',
+        vunits=src.constants.VUNITS,
     ))
     # Add water wells
     water_well_stock = xtal_xml.WellStock(
-        barcode='',
-        comments='Automatically generated.',
-        conc=100,
-        cunits='v/v',
-        density=None,
-        name='water',
-        ph=None,
-        viscosity=3,
-        volatility=None,
+        barcode=src.constants.WATER.barcode,
+        comments=src.constants.WATER.comment,
+        conc=src.constants.WATER.conc,
+        cunits=src.constants.WATER.units,
+        name=src.constants.WATER.name,
+        viscosity=src.constants.WATER.viscosity,
     )
     for well_id in sorted(list(global_usage.keys())):
         water_well_stock.add_well(xtal_xml.Well(
             src.utils.wellid2name(well_id),
             global_usage[well_id],
-            'ul',
+            src.constants.VUNITS,
         ))
     wells.add_stock(water_well_stock)
 

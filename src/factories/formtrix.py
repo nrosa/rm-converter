@@ -2,6 +2,7 @@ import xml.etree.ElementTree as et
 
 from src import objects
 from src import utils
+from src import constants
 
 def screen_from_rxml(rxml_path: str):
     xml_tree = et.parse(rxml_path)
@@ -13,6 +14,7 @@ def screen_from_rxml(rxml_path: str):
         # Create the buffer data object
         buffer_data_xml = ingredient_xml.find('bufferData')
         buffer_data = None
+        # bufferData is an optional element
         if buffer_data_xml is not None:
             # Search for the pka
             pka = buffer_data_xml.find('pKa')
@@ -64,6 +66,7 @@ def screen_from_rxml(rxml_path: str):
             # Find the stocks to be used
             local_id = int(cond_ingred_xml.find('stockLocalID').text)
             stock = ingredients.get_stock_by_local_id(local_id)
+            # highPHStockLocalID is an optional element
             high_ph_stock = None
             high_ph_local_id = cond_ingred_xml.find('highPHStockLocalID')
             if high_ph_local_id is not None:
@@ -84,11 +87,17 @@ def screen_from_rxml(rxml_path: str):
 
     return objects.formtrix.Screen(ingredients, conditions)
 
+def partnumber_to_barcode(partnumber):
+    if len(partnumber) >= 6 and constants.PARTNUMBER_PREFIX + "-" == partnumber[:6]:
+        return partnumber[6:]
+    return ''
+
+
 def to_xtaltrak_recipe_stock(stock):
     assert isinstance(stock, objects.formtrix.Stock)
     return objects.xtaltrak_recipe_xml.Stock(
-        barcode='',
-        comments='',
+        barcode=partnumber_to_barcode(stock.part_number),
+        comments=constants.DEFAULT_COMMENT,
         conc=stock.conc,
         count=stock.get_count(),
         cunits=stock.units,
@@ -98,27 +107,24 @@ def to_xtaltrak_recipe_stock(stock):
         viscosity=None,
         volatility=None,
         volume=stock.get_total_volume(),
-        vunits='ul',
+        vunits=constants.VUNITS,
     )
 
 def to_xtaltrak_recipe_wellstock(stock):
     assert isinstance(stock, objects.formtrix.Stock)
     well_stock = objects.xtaltrak_recipe_xml.WellStock(
-        barcode='',
-        comments='',
+        barcode=partnumber_to_barcode(stock.part_number),
+        comments=constants.DEFAULT_COMMENT,
         conc=stock.conc,
         cunits=stock.units,
-        density=None,
         name=stock.ingredient.name,
         ph=stock.ph,
-        viscosity=None,
-        volatility=None
     )
     for well_id in stock.usages:
         well_stock.add_well(objects.xtaltrak_recipe_xml.Well(
             utils.wellid2name(well_id),
             stock.usages[well_id],
-            'ul',
+            constants.VUNITS,
         ))
     return well_stock
         
