@@ -14,7 +14,7 @@ import argparse
 def main(args):
 
     # Load rxml into objects
-    screen = src.factories.formtrix.screen_from_rxml(args.rxml)
+    screen = src.factories.formtrix.screen_from_rxml(args.rmxml)
 
     # Calculate volumes
     screen.add_recipe_volume(args.volume)
@@ -42,7 +42,7 @@ def main(args):
     sourceplate = xtal_xml.SourcePlate(description, stocks, plate)
     sourceplates = xtal_xml.SourcePlates()
     sourceplates.add_sourceplate(sourceplate)
-    name = ''.join(args.rxml.split('.')[:-1])
+    name = ''.join(args.rmxml.split('.')[:-1])
     job = xtal_xml.Job(name, sourceplates)
 
     # Add water ingredient
@@ -98,7 +98,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='RockMaker Recipe converter.')
 
     # Dataset parameters
-    parser.add_argument('--rxml', type=str, required=True)
+    parser.add_argument('--rmxml', type=str, required=True)
     parser.add_argument('--output-xml', type=str, default='xtaltrak_recipe.xml')
     parser.add_argument('--volume', type=float, default=1500, help='volume per well in uL')
 
