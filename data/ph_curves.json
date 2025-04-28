@@ -468,7 +468,7 @@
 		"HIGH_SOURCE_NAME" : "tacsimate",
 		"HIGH_SOURCE_TYPE" : "Chemical",
 		"HIGH_SOURCE_ID" : 116,
-		"HIGH_PH" : 7.48,
+		"HIGH_PH" : 8,
 		"HIGH_CONC" : 100,
 		"HIGH_UNITS" : "v\/v",
 		"HIGH_CLASS" : "Buffer",

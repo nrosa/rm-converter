@@ -1,97 +1,42 @@
-import src
-import src.objects.xtaltrak_recipe_xml as xtal_xml
-from collections import defaultdict
-import warnings
-import os
-
-import xml.etree.ElementTree as et
-from xml.dom import minidom
-
+from lxml import etree
 import argparse
+from pathlib import Path
+
+from .src import objects
+from .src.factories import rockmaker
+from .src.factories.convert import rmscreen2xtrecipe
 
 
+screen_from_rxml_dom = rockmaker.screen_from_rxml_dom
 
-def main(args):
 
-    # Load rxml into objects
-    screen = src.factories.formtrix.screen_from_rxml(args.rmxml)
-
+def convert_screen(*, screen: objects.rockmaker.Screen, volume, output_xml=None, require_exact_ph):
     # Calculate volumes
-    screen.add_recipe_volume(args.volume)
-
-    # Convert to xtaltrak recipe object
-
-    # Create stocks
-    stocks = xtal_xml.Stocks()
-    for ftrix_stock in screen.get_stocks():
-        stocks.add_stock(
-            src.factories.formtrix.to_xtaltrak_recipe_stock(ftrix_stock)
-        )
-    
-
-    wells = xtal_xml.Wells(args.volume)
-    for ftrix_stock in screen.get_stocks():
-        wells.add_stock(
-            src.factories.formtrix.to_xtaltrak_recipe_wellstock(ftrix_stock)
-        )
-
-    plate = xtal_xml.Plate(wells)
-
-    # Create sourceplates
-    description = ''
-    sourceplate = xtal_xml.SourcePlate(description, stocks, plate)
-    sourceplates = xtal_xml.SourcePlates()
-    sourceplates.add_sourceplate(sourceplate)
-    name = ''.join(args.rmxml.split('.')[:-1])
-    job = xtal_xml.Job(name, sourceplates)
-
-    # Add water ingredient
-    # [well_id: volume]
-    global_usage = defaultdict(float)
-    for ftrix_stock in screen.get_stocks():
-        for well_id in ftrix_stock.usages:
-            global_usage[well_id] += ftrix_stock.usages[well_id]
-
-    # invert global usages so it reflects water usage
-    for well_id in global_usage:
-        global_usage[well_id] = round(args.volume - global_usage[well_id], 1)
-    # Delete zero water entries
-    global_usage = {k:round(v,1) for k,v in global_usage.items() if round(v,1) > 0}
-    # Add water stock
-    stocks.add_stock(xtal_xml.Stock(
-        barcode=src.constants.WATER.barcode,
-        comments=src.constants.WATER.comment,
-        conc=src.constants.WATER.conc,
-        count=len(global_usage),
-        cunits=src.constants.WATER.units,
-        name=src.constants.WATER.name,
-        viscosity=src.constants.WATER.viscosity,
-        volume=sum([global_usage[x] for x in global_usage]),
-        vunits=src.constants.VUNITS,
-    ))
-    # Add water wells
-    water_well_stock = xtal_xml.WellStock(
-        barcode=src.constants.WATER.barcode,
-        comments=src.constants.WATER.comment,
-        conc=src.constants.WATER.conc,
-        cunits=src.constants.WATER.units,
-        name=src.constants.WATER.name,
-        viscosity=src.constants.WATER.viscosity,
-    )
-    for well_id in sorted(list(global_usage.keys())):
-        water_well_stock.add_well(xtal_xml.Well(
-            src.utils.wellid2name(well_id),
-            global_usage[well_id],
-            src.constants.VUNITS,
-        ))
-    wells.add_stock(water_well_stock)
-
-
+    screen.add_recipe_volume(volume, require_exact_ph=require_exact_ph)
+    sp = rmscreen2xtrecipe(screen)
+    sp.add_water()
 
     # Write XML
-    xmlstr = minidom.parseString(et.tostring(job.get_xml_element())).toprettyxml(indent="   ")
-    with open(args.output_xml, "w") as f:
-        f.write(xmlstr)
+    root = sp.get_xml_element()
+    etree.indent(root, space="   ")
+    xmlstr = etree.tostring(root, xml_declaration=True,
+                            pretty_print=True, encoding='utf-8').decode()
+    if not output_xml is None:
+        with open(output_xml, "w") as f:
+            f.write(xmlstr)
+
+    return xmlstr
+
+
+def main(*, rmxml, volume, output_xml=None, require_exact_ph):
+    if isinstance(rmxml, str):
+        rmxml = Path(rmxml)
+
+    # Load rxml into objects
+    screen = rockmaker.screen_from_rxml_file(rmxml, name=rmxml.stem)
+
+    return convert_screen(screen=screen, volume=volume, output_xml=output_xml, require_exact_ph=require_exact_ph)
+
 
 if __name__ == '__main__':
 
@@ -99,9 +44,17 @@ if __name__ == '__main__':
 
     # Dataset parameters
     parser.add_argument('--rmxml', type=str, required=True)
-    parser.add_argument('--output-xml', type=str, default='xtaltrak_recipe.xml')
-    parser.add_argument('--volume', type=float, default=1500, help='volume per well in uL')
-
+    parser.add_argument('--output-xml', type=str,
+                        default='xtaltrak_recipe.xml')
+    parser.add_argument('--volume', type=float, default=1000,
+                        help='volume per well in uL')
+    parser.add_argument('--require-exact-ph',
+                        action=argparse.BooleanOptionalAction, default=True)
     args = parser.parse_args()
 
-    main(args)
+    main(
+        rmxml=args.rmxml,
+        volume=args.volume,
+        output_xml=args.output_xml,
+        require_exact_ph=args.require_exact_ph,
+    )
