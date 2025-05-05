@@ -1,7 +1,8 @@
-from . import objects
+from .exceptions import RecipeError
 from .utils import henderson_hasselbach_mix
 from .factories.bases import _StocksFactory, _PhCurveFactory
 from .config.constants import PH_TOL, HH_PH_PKA_MAX_DIFF
+from .objects.xtaltrak import Stock, DesignItem, DesignWell
 import math
 from dataclasses import dataclass
 from typing import List, Tuple, Optional
@@ -9,9 +10,9 @@ from typing import List, Tuple, Optional
 
 @dataclass
 class StockFrac:
-    stock: objects.xtaltrak.Stock
+    stock: Stock
     frac: float
-    high_stock: objects.xtaltrak.Stock = None
+    high_stock: Stock = None
     high_frac: float = None
 
 
@@ -23,18 +24,18 @@ def compare_ph(ph1: float, ph2: float, require_exact_ph: bool = False) -> bool:
 
 
 def pick_stocks_for_well(
-    dw: objects.xtaltrak.DesignWell,
+    dw: DesignWell,
     stocks_f: _StocksFactory,
     phcurve_f: _PhCurveFactory,
     require_exact_ph: bool,
-) -> List[Tuple[objects.xtaltrak.Stock, Optional[objects.xtaltrak.Stock]]]:
+) -> List[Tuple[Stock, Optional[Stock]]]:
     possible_stocks = get_possible_stocks(
         dw, stocks_f, phcurve_f, require_exact_ph)
     num_factors = len(dw.items)
 
     num_stock_combinations = math.prod([len(x) for x in possible_stocks])
     if num_stock_combinations == 0:
-        raise Exception('One of the factors has zero possible stocks.')
+        raise RecipeError('One of the factors has zero possible stocks.')
     idxs = [0]*num_factors
     best_dispense = [-1]
     best_stocks = None
@@ -64,12 +65,12 @@ def pick_stocks_for_well(
                     sv2 = possible_stocks[k][idxs[k]]
                     best_stocks.append((sv2.stock, sv2.high_stock))
     if best_stocks is None:
-        raise Exception('Could not generate recipe.')
+        raise RecipeError('Could not generate recipe.')
     return best_stocks
 
 
 def get_possible_stocks(
-    dw: objects.xtaltrak.DesignWell,
+    dw: DesignWell,
     stocks_f: _StocksFactory,
     phcurve_f: _PhCurveFactory,
     require_exact_ph: bool,
@@ -99,10 +100,10 @@ def get_possible_stocks(
 
 
 def find_exact_match(
-        di: objects.xtaltrak.DesignItem,
-        factor_stocks: List[objects.xtaltrak.Stock],
+        di: DesignItem,
+        factor_stocks: List[Stock],
         require_exact_ph: bool,
-) -> List[objects.xtaltrak.Stock]:
+) -> List[Stock]:
     possible_stocks = []
     for fs in factor_stocks:
         if compare_ph(fs.ph, di.ph, require_exact_ph) and fs.conc > di.concentration:
@@ -112,9 +113,9 @@ def find_exact_match(
 
 
 def find_hh_stocks(
-    di: objects.xtaltrak.DesignItem,
-    factor_stocks: List[objects.xtaltrak.Stock]
-) -> List[objects.xtaltrak.Stock]:
+    di: DesignItem,
+    factor_stocks: List[Stock]
+) -> List[Stock]:
     possible_stocks = []
     # Find if there is a pka that can be used for HH
     # TODO Currently doesn't check how close the pkas are together
@@ -148,14 +149,14 @@ def find_hh_stocks(
 
 
 def find_phcurve_stocks(
-        di: objects.xtaltrak.DesignItem,
+        di: DesignItem,
         stocks_f: _StocksFactory,
         phcurve_f: _PhCurveFactory,
 ):
     possible_stocks = []
     # TODO Name instead of id?
     curve = phcurve_f.get_curve_by_chem_id(di.chemical.id)
-    if curve is not None and curve.low_ph <= di.ph and curve.high_ph >= di.ph:
+    if curve is not None and curve.low_ph is not None and curve.high_ph is not None and curve.low_ph <= di.ph and curve.high_ph >= di.ph:
         low_curve_stocks = stocks_f.get_stocks_by_chemid(curve.low_chem.id)
         high_curve_stocks = stocks_f.get_stocks_by_chemid(curve.high_chem.id)
         # Check that there are points in the curve
