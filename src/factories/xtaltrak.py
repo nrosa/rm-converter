@@ -136,7 +136,7 @@ class DesignFactory(object):
                         )
                     if chem is None:
                         raise ChemNotFoundError(
-                            f'Cant find chemical {item.attrib['name']}')
+                            f'Cant find chemical {item.attrib["name"]}')
                 design_items.append(
                     xt_objects.DesignItem(
                         chemical=chem,
