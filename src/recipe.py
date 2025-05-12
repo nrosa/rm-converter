@@ -33,9 +33,12 @@ def pick_stocks_for_well(
         dw, stocks_f, phcurve_f, require_exact_ph)
     num_factors = len(dw.items)
 
+    # Check if there are any factors that have no possible stocks
+    for i, x in enumerate(possible_stocks):
+        if len(x) == 0:
+            raise RecipeError(f'{dw.items[i]} has no possible stocks.')
+
     num_stock_combinations = math.prod([len(x) for x in possible_stocks])
-    if num_stock_combinations == 0:
-        raise RecipeError('One of the factors has zero possible stocks.')
     idxs = [0]*num_factors
     best_dispense = [-1]
     best_stocks = None
