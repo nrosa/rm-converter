@@ -6,6 +6,7 @@ from .objects.xtaltrak import Stock, DesignItem, DesignWell
 import math
 from dataclasses import dataclass
 from typing import List, Tuple, Optional
+from itertools import product
 
 
 @dataclass
@@ -22,6 +23,19 @@ def compare_ph(ph1: float, ph2: float, require_exact_ph: bool = False) -> bool:
     else:
         return abs(ph1-ph2) < PH_TOL
 
+def prefer_dispense(dispense, best_dispense) -> bool:
+    """
+    Returns True if dispense is better than best_dispense.
+    A dispense is better if it has a higher value at the first index where they differ.
+    If they are equal, returns False.
+    """
+    for i in range(min(len(dispense), len(best_dispense))):
+        if dispense[i] > best_dispense[i]:
+            return True
+        elif dispense[i] < best_dispense[i]:
+            return False
+    return False
+
 
 def pick_stocks_for_well(
     dw: DesignWell,
@@ -31,6 +45,7 @@ def pick_stocks_for_well(
 ) -> List[Tuple[Stock, Optional[Stock]]]:
     possible_stocks = get_possible_stocks(
         dw, stocks_f, phcurve_f, require_exact_ph)
+    
     num_factors = len(dw.items)
 
     # Check if there are any factors that have no possible stocks
@@ -43,14 +58,11 @@ def pick_stocks_for_well(
     best_dispense = [-1]
     best_stocks = None
 
-    for i in range(num_stock_combinations):
-        curr_idx = i
-        for j in range(num_factors):
-            idxs[j] = curr_idx % len(possible_stocks[j])
-
+    for idxs in product(*[range(len(x)) for x in possible_stocks]):
+        # Calculate dispense values for the current combination of stocks
         dispenses = []
-        for j in range(num_factors):
-            sv1 = possible_stocks[j][idxs[j]]
+        for stocks, idx in zip(possible_stocks, idxs):
+            sv1 = stocks[idx]
             dispenses.append(sv1.frac)
             if sv1.high_frac is not None:
                 dispenses.append(sv1.high_frac)
@@ -60,13 +72,14 @@ def pick_stocks_for_well(
             continue
 
         dispenses.sort()
-        for j in range(min([len(dispenses), len(best_dispense)])):
-            if dispenses[j] > best_dispense[j]:
-                best_dispense = dispenses
-                best_stocks = []
-                for k in range(num_factors):
-                    sv2 = possible_stocks[k][idxs[k]]
-                    best_stocks.append((sv2.stock, sv2.high_stock))
+        if prefer_dispense(dispenses, best_dispense):
+            # If this dispense is better than the best dispense, update best_dispense and best_stocks
+            best_dispense = dispenses
+            best_stocks = []
+            for k in range(num_factors):
+                sv2 = possible_stocks[k][idxs[k]]
+                best_stocks.append((sv2.stock, sv2.high_stock))
+
     if best_stocks is None:
         raise RecipeError('Could not generate recipe.')
     return best_stocks
@@ -77,6 +90,7 @@ def get_possible_stocks(
     stocks_f: _StocksFactory,
     phcurve_f: _PhCurveFactory,
     require_exact_ph: bool,
+    filter_unavailable: bool = True,
 ) -> list:
     # TODO There are dispense values that are very close to zero but negative
     all_possible_stocks = []
@@ -84,6 +98,9 @@ def get_possible_stocks(
         possible_stocks = []
         # TODO Name instead of id?
         factor_stocks = stocks_f.get_stocks_by_chemid(di.chemical.id)
+        # Filter out stocks that are not available
+        if filter_unavailable:
+            factor_stocks = [fs for fs in factor_stocks if fs.available]
         if di.ph is None:
             possible_stocks += find_exact_match(di,
                                                 factor_stocks, require_exact_ph)
@@ -97,7 +114,7 @@ def get_possible_stocks(
             if len(possible_stocks) == 0:
                 possible_stocks += find_exact_match(di,
                                                     factor_stocks, require_exact_ph)
-
+        
         all_possible_stocks.append(possible_stocks)
     return all_possible_stocks
 

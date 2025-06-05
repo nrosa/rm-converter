@@ -175,6 +175,7 @@ class Stock(VolumeUnitsMixin):
         barcode: str,
         density: Optional[float] = None,
         comments: Optional[str] = None,
+        available: bool = True,
     ):
         self.id = stock_id
         self.name = stock_name
@@ -190,6 +191,7 @@ class Stock(VolumeUnitsMixin):
         self.barcode = barcode
         self.comments = comments
         self.wells = []
+        self.available = available
 
     def add_well(self, well: Well):
         self.wells.append(well)

@@ -1,6 +1,7 @@
 from .config import constants
 
 import math
+import re
 
 
 def wellname2id(name: str) -> int:
@@ -64,10 +65,12 @@ def get_shortname_from_lid_name(lid_name):
     if shortname is None:
         return None
 
-    shortname = shortname.split(' (')[0]
 
-    if 'pH' in shortname:
-        shortname = shortname.split('pH')[0]
+    # Remove the concentration
+    shortname = re.sub(r'(?i)\(?\s*\d+(\.\d+)?\s*%?\s*(%|mm|m|w\/v|v\/v)\s*\)?', '', shortname)
+
+    # Remove the pH
+    shortname = re.sub(r'(?i)"?\s*ph\s*\d+(\.\d+)?"?', '', shortname)
 
     # Remove all whitespace
     shortname = shortname.replace(' ', '')

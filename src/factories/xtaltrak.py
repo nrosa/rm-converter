@@ -66,7 +66,8 @@ class StocksFactory(_StocksFactory):
                 volatility=x['STOCK_VOLATILITY'],
                 viscosity=x['STOCK_VISCOSITY'],
                 lid_name=x['STOCK_LIDS'],
-                barcode=x['STOCK_BARCODE']
+                barcode=str(x['STOCK_ID']),
+                available=bool(x['STOCK_STATE'])
             ) for x in stock_data
         }
 
