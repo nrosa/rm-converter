@@ -1,19 +1,44 @@
 from lxml import etree
 import argparse
 from pathlib import Path
+import pathlib
+import os
 
 from .src import objects
 from .src.factories import rockmaker
 from .src.factories.convert import rmscreen2xtrecipe
+from .src.factories import xtaltrak
 
 
 screen_from_rxml_dom = rockmaker.screen_from_rxml_dom
+
+current_dir = pathlib.Path(__file__).parent.resolve()
+
+class FactoriesJSON:
+    def __init__(self, data_dir=current_dir / "data"):
+        # Load all the object factories
+        self.chems = xtaltrak.ChemicalsFactory(
+            os.path.join(data_dir, 'chemicals.json'),
+            os.path.join(data_dir, 'chemical_alias.json')
+        )
+        self.stocks = xtaltrak.StocksFactory(
+            os.path.join(data_dir, 'stocks.json'),
+            self.chems
+        )
+        self.phcurve = xtaltrak.PhCurveFactory(
+            os.path.join(data_dir, 'ph_curves.json'),
+            os.path.join(data_dir, 'ph_points.json'),
+            self.chems
+        )
+        self.design = xtaltrak.DesignFactory(self.chems)
+        self.recipe = xtaltrak.RecipeFactory(self.stocks)
+
 
 
 def convert_screen(*, screen: objects.rockmaker.Screen, volume, output_xml=None, require_exact_ph):
     # Calculate volumes
     screen.add_recipe_volume(volume, require_exact_ph=require_exact_ph)
-    sp = rmscreen2xtrecipe(screen)
+    sp = rmscreen2xtrecipe(screen, stocks_f=FactoriesJSON().stocks,)
     sp.add_water()
 
     # Write XML

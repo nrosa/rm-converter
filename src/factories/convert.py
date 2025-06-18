@@ -15,11 +15,28 @@ from typing import List, Optional
 ####################################################################################################
 
 
-def rm2xt_stock(rm_stock: objects_rm.Stock, rm_ingred: objects_rm.Ingredient) -> objects_xt.Stock:
-    # TODO Fill in the missing (None) values
+def rm2xt_stock(
+        rm_stock: objects_rm.Stock,
+        rm_ingred: objects_rm.Ingredient,
+        stocks_f: Optional[factories_xt.StocksFactory] = None,
+    ) -> objects_xt.Stock:
+    # Fill in the missing (None) values with stock data if available
     barcode = None
+
+    # If we can find a matching stock in the stocks factory, use its properties
     if rm_stock.vendorPartNumber is not None:
         barcode = utils.partnumber_to_barcode(rm_stock.vendorPartNumber)
+        if stocks_f is not None and barcode:
+            stock_id = None
+            try:
+                stock_id = int(barcode)
+            except ValueError:
+                pass
+            if stock_id is not None:
+                stock = stocks_f.get_stock_by_id(stock_id)
+                if stock is not None:
+                    return stock
+
     xt_stock = objects_xt.Stock(
         stock_id=None,
         stock_name=rm_ingred.ingredient_name,
@@ -56,7 +73,10 @@ def rm2xt_chem(ingredient: objects_rm.Ingredient) -> objects_xt.Chemical:
     )
 
 
-def rmscreen2xtrecipe(rm_screen: objects_rm.Screen) -> objects_xt.SourcePlate:
+def rmscreen2xtrecipe(
+        rm_screen: objects_rm.Screen,
+        stocks_f: Optional[factories_xt.StocksFactory] = None,
+    ) -> objects_xt.SourcePlate:
     # TODO check volume has been created
     sp = objects_xt.SourcePlate(
         description=constants.DEFAULT_DESC,
@@ -67,12 +87,14 @@ def rmscreen2xtrecipe(rm_screen: objects_rm.Screen) -> objects_xt.SourcePlate:
         for cond_ingred in cond:
             sp.stocks.append(rm2xt_stock(
                 rm_stock=cond_ingred.stock,
-                rm_ingred=cond_ingred.ingredient
+                rm_ingred=cond_ingred.ingredient,
+                stocks_f=stocks_f
             ))
             if cond_ingred.high_ph_stock is not None:
                 sp.stocks.append(rm2xt_stock(
                     rm_stock=cond_ingred.high_ph_stock,
-                    rm_ingred=cond_ingred.ingredient
+                    rm_ingred=cond_ingred.ingredient,
+                    stocks_f=stocks_f
                 ))
     return sp
 
