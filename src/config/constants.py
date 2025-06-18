@@ -16,6 +16,7 @@ CHEM_GROUPS = {
 
 
 BUFFER = 'Buffer'
+PRECIPITANT = 'Precipitant'
 
 SHRTNAME_LEN = 9
 

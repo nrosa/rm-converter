@@ -4,7 +4,7 @@ from lxml import etree
 import warnings
 from collections import defaultdict
 
-from ..config.constants import SHRTNAME_LEN, WATER, BUFFER
+from ..config.constants import SHRTNAME_LEN, WATER, BUFFER, PRECIPITANT
 from ..utils import get_shortname_from_lid_name, wellid2name, _is_tacsimate
 from .base import BaseXml, ListXml, XmlMixin, VolumeUnitsMixin
 
@@ -23,7 +23,7 @@ class DesignItem:
         one_stock: Optional[bool] = None,
     ):
         self.chemical = chemical
-        self.item_class = item_class
+        self._item_class = item_class
         self.concentration = concentration
         self.units = units
         self.ph = ph
@@ -42,7 +42,14 @@ class DesignItem:
             return True
         if self.one_stock and self.one_ph:
             return False
-        return self.item_class == BUFFER
+        return self._item_class == BUFFER
+    
+    # Make the item class match the is_buffer property
+    @property
+    def item_class(self) -> str:
+        if self._item_class == BUFFER and not self.is_buffer:
+            return PRECIPITANT
+        return self._item_class
 
 
 class DesignWell:
