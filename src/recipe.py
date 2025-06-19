@@ -8,6 +8,9 @@ from dataclasses import dataclass
 from typing import List, Tuple, Optional
 from itertools import product
 
+# TODO Temporarily hardcoded stock ids
+stockaid_avail = {3520, 1099, 110, 2440, 3601, 371, 3660, 3666, 3723, 2143, 1377, 3401, 190, 1369, 1037, 128, 903, 2702, 3066, 826, 1387, 1382, 2542, 3022, 3021, 2540, 3132, 4244, 4245, 4260, 4002, 4001, 1939, 4240, 844, 4340, 4341, 4360, 3863, 4380, 220, 1655, 219, 1362, 3121, 201, 4440, 3122, 1652, 243, 1386, 1761, 2781, 1432, 200, 315, 3740, 2363, 271, 198, 3669, 194, 1380, 146, 2606, 1394, 908, 1375, 3662, 2044, 1979, 1777, 475, 1032, 1031, 183, 291, 292, 4160, 4460, 2520, 208, 1201, 4481, 1373, 4220, 140, 1696, 2763, 622, 805, 1240, 445, 258, 1899, 1900, 196, 4500, 4520, 148, 4600, 2765, 1258, 3260, 4161, 1532, 370, 1320, 262, 1262, 938, 209, 395, 179, 830, 2800, 1378, 1379, 212, 1227, 3460, 217, 1223, 2340, 1006, 2141, 199, 4480, 2620, 273, 1672, 1265, 206, 540, 3129, 3126, 3125, 3127, 1038, 362, 1389, 299, 3131, 3124, 202, 1492, 1451, 123, 1693, 1673, 1692, 1779, 2764, 1715, 3880, 621, 2142, 3940, 940, 218, 3123, 2602, 2400, 3128, 2220, 1121, 1239, 945, 363, 234, 303, 173, 2421, 2019, 1393, 1424, 1081, 349, 1281, 1282, 2280, 825, 3864, 2200, 3743, 1361, 1010, 1011, 1260, 1363, 1266, 829, 306, 471, 1400, 626, 2160, 835, 2541, 236, 1181, 310, 1252, 1253, 138, 318, 2600, 322, 323, 2601, 1372, 1515, 121, 1244, 3024, 3025, 2607, 204, 181, 2605, 2820, 3860, 1302, 3700, 3744, 311, 117, 3641, 166, 2941, 4711, 4710, 4361, 1254, 1079, 470, 4809, 1230, 4750, 4703, 4849, 4872, 4870, 4751, 4871, 4869, 4789, 4873, 4909, 4729, 4769, 4647, 4704, 4702, 2762, 2780, 4949, 1028, 1697, 3440, 36, 4706, 418, 108, 224, 260, 293, 350, 134, 3902, 624, 4080, 520, 3721, 1259, 4241, 1007, 3720, 1778, 2861, 4020, 4180, 1431, 1592, 205, 3130, 1041, 1839, 2300, 1059, 744, 1760, 4889, 1340, 1430, 1759, 804, 2900, 1533, 1222, 789, 1383, 421, 2420, 3420, 1920, 246, 824, 444, 62, 1371, 476, 1376, 623, 1517, 4, 1039, 1699, 1392, 1119, 4714, 4713, 1246, 450, 907, 2320, 895, 211, 1758, 4140, 899, 1713, 309, 3120, 14, 1280, 320, 1780, 207, 1959, 284, 125, 43, 2360, 946, 3621, 3780, 1999}
+
 
 @dataclass
 class StockFrac:
@@ -42,6 +45,7 @@ def pick_stocks_for_well(
     stocks_f: _StocksFactory,
     phcurve_f: _PhCurveFactory,
     require_exact_ph: bool,
+    return_dispenses: bool = False,
 ) -> List[Tuple[Stock, Optional[Stock]]]:
     possible_stocks = get_possible_stocks(
         dw, stocks_f, phcurve_f, require_exact_ph)
@@ -53,7 +57,6 @@ def pick_stocks_for_well(
         if len(x) == 0:
             raise RecipeError(f'{dw.items[i]} has no possible stocks.')
 
-    num_stock_combinations = math.prod([len(x) for x in possible_stocks])
     idxs = [0]*num_factors
     best_dispense = [-1]
     best_stocks = None
@@ -82,6 +85,8 @@ def pick_stocks_for_well(
 
     if best_stocks is None:
         raise RecipeError('Could not generate recipe.')
+    if return_dispenses:
+        return best_stocks, best_dispense
     return best_stocks
 
 
@@ -100,7 +105,7 @@ def get_possible_stocks(
         factor_stocks = stocks_f.get_stocks_by_chemid(di.chemical.id)
         # Filter out stocks that are not available
         if filter_unavailable:
-            factor_stocks = [fs for fs in factor_stocks if fs.available]
+            factor_stocks = [fs for fs in factor_stocks if fs.available and fs.id in stockaid_avail]
         if di.ph is None:
             possible_stocks += find_exact_match(di,
                                                 factor_stocks, require_exact_ph)
