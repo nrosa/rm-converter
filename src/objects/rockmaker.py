@@ -191,6 +191,11 @@ class ConditionIngredient(BaseXml, PhMixin):
                 self.high_ph_volume, constants.CONC_PREC)
             self.high_ph_stock.add_usage(self.well_id, self.high_ph_volume)
 
+        if self.high_ph_stock is not None:
+            if self.high_ph_volume is None:
+                raise Exception(
+                    f'High pH volume is None for {self.ingredient.ingredient_name} in well {utils.wellid2name(self.well_id + 1)}, {self.stock.ph}, {self.high_ph_stock.ph}')
+
 
 class Stock(BaseXml, PhMixin):
     # __slots__ = ['local_id','conc','units','ph','buffer','part_number', 'usages']

@@ -352,7 +352,8 @@ class SourcePlate(BaseXml):
                 well_volume_map[well.name] += well.volume
         water_stock = self.get_water_stock()
         for k, v in well_volume_map.items():
-            water_stock.add_well(Well(k, self.volume-v))
+            if v < self.volume:
+                water_stock.add_well(Well(k, self.volume-v))
         self.stocks.append(water_stock)
 
     def get_water_stock(self):

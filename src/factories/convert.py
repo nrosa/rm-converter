@@ -83,19 +83,41 @@ def rmscreen2xtrecipe(
         name=rm_screen.name,
         volume=rm_screen.volume
     )
-    for cond in rm_screen.conditions:
+    # stock_name -> xt_stock
+    stock_map = {}
+
+    def add_stock(rm_stock, rm_ingredient, volume, well_id):
+        if volume is None:
+            raise ValueError(f"Volume is None for stock {rm_stock.localID} in well {utils.wellid2name(well_id)}")
+        xt_stock = rm2xt_stock(
+            rm_stock=rm_stock,
+            rm_ingred=rm_ingredient,
+            stocks_f=stocks_f
+        )
+        if xt_stock.name not in stock_map:
+            stock_map[xt_stock.name] = xt_stock
+        xt_stock = stock_map[xt_stock.name]
+        # Add the volume
+        xt_stock.add_well(objects_xt.Well(
+            utils.wellid2name(well_id),
+            volume
+        ))
+        
+    for i, cond in enumerate(rm_screen.conditions):
         for cond_ingred in cond:
-            sp.stocks.append(rm2xt_stock(
-                rm_stock=cond_ingred.stock,
-                rm_ingred=cond_ingred.ingredient,
-                stocks_f=stocks_f
-            ))
+            add_stock(cond_ingred.stock, cond_ingred.ingredient,
+                      cond_ingred.volume, i + 1)
+            
             if cond_ingred.high_ph_stock is not None:
-                sp.stocks.append(rm2xt_stock(
-                    rm_stock=cond_ingred.high_ph_stock,
-                    rm_ingred=cond_ingred.ingredient,
-                    stocks_f=stocks_f
-                ))
+            # If there is a high pH stock, add it as well
+                add_stock(cond_ingred.high_ph_stock, cond_ingred.ingredient,
+                            cond_ingred.high_ph_volume, i + 1)
+
+    # Add all the stocks in the stock_map to the source plate
+    for stock in stock_map.values():
+        sp.stocks.append(stock)
+    
+
     return sp
 
 
