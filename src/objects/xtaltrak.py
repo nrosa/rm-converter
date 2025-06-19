@@ -185,7 +185,7 @@ class Stock(VolumeUnitsMixin):
         available: bool = True,
     ):
         self.id = stock_id
-        self.name = stock_name
+        self.stock_name = stock_name
         self.chem = chem
         self.density = density
         self.viscosity = viscosity
@@ -200,6 +200,8 @@ class Stock(VolumeUnitsMixin):
         self.wells = []
         self.available = available
 
+        if isinstance(self.chem, int):
+            raise Exception('should be chem')
     def add_well(self, well: Well):
         self.wells.append(well)
 
@@ -218,9 +220,13 @@ class Stock(VolumeUnitsMixin):
     @property
     def volume(self):
         return sum([x.volume for x in self.wells])
+    
+    @property
+    def name(self):
+        return self.chem.name
 
     def __repr__(self):
-        return f'{self.name}, id:{self.id}'
+        return f'{self.stock_name}, id:{self.id}'
 
 
 class StockVolCount(Stock, XmlMixin):
@@ -228,8 +234,8 @@ class StockVolCount(Stock, XmlMixin):
     def __init__(self, original_stock: Stock):
         super().__init__(
             stock_id=original_stock.id,
-            stock_name=original_stock.name,
-            chem=original_stock.chem.id,
+            stock_name=original_stock.stock_name,
+            chem=original_stock.chem,
             conc=original_stock.conc,
             units=original_stock.cunits,
             ph=original_stock.ph,
@@ -252,8 +258,8 @@ class StockWells(Stock, XmlMixin):
     def __init__(self, original_stock: Stock):
         super().__init__(
             stock_id=original_stock.id,
-            stock_name=original_stock.name,
-            chem=original_stock.chem.id,
+            stock_name=original_stock.stock_name,
+            chem=original_stock.chem,
             conc=original_stock.conc,
             units=original_stock.cunits,
             ph=original_stock.ph,

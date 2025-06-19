@@ -94,9 +94,9 @@ def rmscreen2xtrecipe(
             rm_ingred=rm_ingredient,
             stocks_f=stocks_f
         )
-        if xt_stock.name not in stock_map:
-            stock_map[xt_stock.name] = xt_stock
-        xt_stock = stock_map[xt_stock.name]
+        if xt_stock.stock_name not in stock_map:
+            stock_map[xt_stock.stock_name] = xt_stock
+        xt_stock = stock_map[xt_stock.stock_name]
         # Add the volume
         xt_stock.add_well(objects_xt.Well(
             utils.wellid2name(well_id),
@@ -263,10 +263,7 @@ def design2screen(
     # Required for buffer class fixes
     design.set_one_ph()
     screen = objects_rm.Screen(name=design.name)
-    # msg = ''
-    # for stock in recipe.stocks:
-    #     msg += f'{stock.name} {len(stock.wells)}\n'
-    # raise Exception(msg)
+
     for well_id, dw in design.wells.items():
         # Get the stocks
         if recipe is None:
@@ -308,26 +305,11 @@ def design2screen(
                 chem_stocks = [
                     x for x in well_stocks if x.chem.id in di_chem_ids]
 
-#                 if len(chem_stocks) not in {1, 2}:
-#                     raise Exception(f"""{len(chem_stocks)} stocks for chem {di.chemical.name} well {utils.wellid2name(well_id)} {well_id}. Expected 1 or 2.
-# stocks {[x.name for x in well_stocks]}.
-# chem_stocks {[x.name for x in chem_stocks]}""")
-
-                # err_msg = f'''
-                # di_chem_ids: {di_chem_ids}
-                # chem stocks: {[x for x in chem_stocks]}
-                # well: {utils.wellid2name(well_id)} {well_id}
-                # well stocks: {[x.name for x in well_stocks]}
-                # '''
-
-                # if well_id == 15:
-                #     raise Exception(err_msg)
-
                 low_stock = chem_stocks[0]
                 if len(chem_stocks) == 2:
                     high_stock = chem_stocks[1]
-                # if high_stock is not None and high_stock.ph is None:
-                #     raise Exception(err_msg)
+                if high_stock is not None and high_stock.ph is None:
+                    raise Exception(f"High stock {high_stock.name} in well {utils.wellid2name(well_id)} {well_id} has no pH value.")
                 if high_stock is not None and low_stock.ph > high_stock.ph:
                     low_stock, high_stock = high_stock, low_stock
 
