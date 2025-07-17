@@ -124,6 +124,9 @@ class PhPoint:
         self.base_fraction = base_fraction
         self.acid_fraction = 100 - base_fraction
         self.ph = ph
+        
+    def __repr__(self):
+        return f'base_frac: {self.base_fraction}, acid_frac: {self.acid_fraction}, ph: {self.ph}'
 
 
 class PhCurve:
@@ -135,8 +138,8 @@ class PhCurve:
         chem: Chemical,
         low_chem: Chemical,
         high_chem: Chemical,
-        low_ph: float,
-        high_ph: float,
+        low_ph: Optional[float],
+        high_ph: Optional[float],
         points: List[PhPoint]
     ):
         self.chem = chem
@@ -147,18 +150,24 @@ class PhCurve:
 
         self.points = points
 
+        # If either the low ph or high ph are not set then get them from the points
+        if self.low_ph is None:
+            warnings.warn("Curve has no low pH, using the lowest point in curve")
+            self.low_ph = min([point.ph for point in self.points])
+        if self.high_ph is None:
+            warnings.warn("Curve has no high pH, using the highest point in curve")
+            self.high_ph = max([point.ph for point in self.points])
+
         # Make the highest and lowest ph point equal the high and low ph
         for point in self.points:
-            if point.acid_fraction == 0:
-                if point.ph != self.high_ph:
-                    warnings.warn(
-                        f'Warning: Acid fraction 0 pH {point.ph} doesn\'t match curve high pH {self.high_ph}. Overwriting')
-                    point.ph = self.high_ph
-            if point.base_fraction == 0:
-                if point.ph != self.low_ph:
-                    warnings.warn(
-                        f'Warning: Base fraction 0 pH {point.ph} doesn\'t match curve low pH {self.low_ph}. Overwriting')
-                    point.ph = self.low_ph
+            if point.acid_fraction == 0 and point.ph != self.high_ph:
+                warnings.warn(
+                    f'Warning: Acid fraction 0 pH {point.ph} doesn\'t match curve high pH {self.high_ph}. Overwriting')
+                point.ph = self.high_ph
+            if point.base_fraction == 0 and point.ph != self.low_ph:
+                warnings.warn(
+                    f'Warning: Base fraction 0 pH {point.ph} doesn\'t match curve low pH {self.low_ph}. Overwriting')
+                point.ph = self.low_ph
 
 # Wellstock
 
