@@ -4,10 +4,10 @@ from pathlib import Path
 import pathlib
 import os
 
-from .src import objects
-from .src.factories import rockmaker
-from .src.factories.convert import rmscreen2xtrecipe
-from .src.factories import xtaltrak
+from . import objects
+from .factories import rockmaker
+from .factories.convert import rmscreen2xtrecipe
+from .factories import xtaltrak
 
 
 screen_from_rxml_dom = rockmaker.screen_from_rxml_dom

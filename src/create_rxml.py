@@ -1,4 +1,4 @@
-from .src.factories import xtaltrak
+from .factories import xtaltrak
 import argparse
 import os
 from lxml import etree
@@ -6,7 +6,7 @@ import pathlib
 import sys
 import re
 
-from .src.factories import convert
+from .factories import convert
 
 current_dir = pathlib.Path(__file__).parent.resolve()
 sys.path.append(str(current_dir))
@@ -25,7 +25,7 @@ def rockmaker_filename(screen_name):
 
 
 class FactoriesJSON:
-    def __init__(self, data_dir=current_dir / "data"):
+    def __init__(self, data_dir):
         # Load all the object factories
         self.chems = xtaltrak.ChemicalsFactory(
             os.path.join(data_dir, 'chemicals.json'),
@@ -73,7 +73,7 @@ def write_rm_xml_file(*, output_xml, **kwargs):
         f.write(xmlstr)
 
 
-def main(*, design_xml, recipe_xml, output_xml):
+def main(*, design_xml, recipe_xml, output_xml, data_dir):
     # Read in the xml files
     design_xo = etree.parse(design_xml).getroot()
     recipe_xo = None
@@ -82,7 +82,7 @@ def main(*, design_xml, recipe_xml, output_xml):
 
     write_rm_xml_file(
         output_xml=output_xml,
-        factory=FactoriesJSON(),
+        factory=FactoriesJSON(data_dir=data_dir),
         design_xo=design_xo,
         recipe_xo=recipe_xo,
     )
@@ -95,6 +95,7 @@ if __name__ == '__main__':
     # Dataset parameters
     parser.add_argument('--design-xml', type=str, required=True)
     parser.add_argument('--recipe-xml', type=str, default=None)
+    parser.add_argument('--data-dir', type=str, default='data')
     parser.add_argument('--output-xml', type=str,
                         default='rockmaker_design.xml')
 
@@ -102,4 +103,5 @@ if __name__ == '__main__':
 
     main(design_xml=args.design_xml,
          recipe_xml=args.recipe_xml,
-         output_xml=args.output_xml)
+         output_xml=args.output_xml,
+         data_dir=args.data_dir)
