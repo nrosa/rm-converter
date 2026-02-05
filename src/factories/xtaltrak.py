@@ -34,7 +34,8 @@ class ChemicalsFactory(_ChemicalsFactory):
                 name=chem['NAME'],
                 cas=chem['CAS'],
                 pkas=[chem[x] for x in ['PKA1', 'PKA2', 'PKA3'] if chem[x]],
-                aliases=aliases[chem_id]
+                aliases=aliases[chem_id],
+                shortname=chem['SHORTNAME']
             )
 
             # Create a name index

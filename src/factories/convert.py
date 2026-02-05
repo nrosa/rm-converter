@@ -203,23 +203,10 @@ def chemical2ingredient(
         else:
             pass  # TODO Exception?
 
-    # Get the shortname
-    shortname = None
-    if stocks_f is not None:
-        shortname = utils.get_shortname_from_stocklid(
-            chemical=chem, sf=stocks_f)
-    if shortname is None:
-        if len(chem.aliases) > 0:
-            shortname = utils.get_shortname_from_aliases(
-                chem.aliases)
-        else:
-            shortname = chem.name[:constants.SHRTNAME_LEN] if len(
-                chem.name) > constants.SHRTNAME_LEN else chem.name
-
     ingred = objects_rm.Ingredient(
         name=chem.name,
         cas_number=chem.cas if chem.cas else '-1',
-        shortname=shortname,
+        shortname=chem.shortname,
         buffer_data=buffer_data,
     )
     if include_aliases:

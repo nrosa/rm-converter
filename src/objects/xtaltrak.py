@@ -95,23 +95,26 @@ class Chemical:
                  cas: str,
                  pkas: List[float],
                  aliases: List[str],
+                 shortname: Optional[str] = None
                  ):
         self.id = chem_id
         self.name = name
         self.cas = cas
         self.pkas = pkas
         self.aliases = aliases
-
-        shortname = ''
-        if len(self.aliases) > 0:
-            shortname = sorted(aliases, key=lambda x: len(x))[0]
-            if len(shortname) > SHRTNAME_LEN:
-                shortname = shortname[:SHRTNAME_LEN]
-        else:
-            shortname = name[:SHRTNAME_LEN] if len(
-                name) > SHRTNAME_LEN else name
-
         self.shortname = shortname
+
+        if self.shortname is None:
+            shortname = ''
+            if len(self.aliases) > 0:
+                shortname = sorted(aliases, key=lambda x: len(x))[0]
+                if len(shortname) > SHRTNAME_LEN:
+                    shortname = shortname[:SHRTNAME_LEN]
+            else:
+                shortname = name[:SHRTNAME_LEN] if len(
+                    name) > SHRTNAME_LEN else name
+
+            self.shortname = shortname
 
     def __repr__(self):
         return (f'{self.name}')
